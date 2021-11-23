@@ -1,11 +1,12 @@
 import os
+from tqdm import tqdm
 from typing import Union, List
 from matchms import importing
 from matchms.Spectrum import Spectrum
 
 
-def convert_files_to_matchms_spectrum_objects(file_name
-                                              ) -> Union[List[Spectrum], None]:
+def convert_file_to_matchms_spectrum_objects(file_name
+                                             ) -> Union[List[Spectrum], None]:
     """Loads spectra from your spectrum file into memory as matchms Spectrum object
 
     The following file extensions can be loaded in with this function:
@@ -22,17 +23,23 @@ def convert_files_to_matchms_spectrum_objects(file_name
 
     file_extension = os.path.splitext(file_name)[1].lower()
     if file_extension == ".mzml":
-        return list(importing.load_from_mzml(file_name))
+        return list(tqdm(importing.load_from_mzml(file_name),
+                    desc="Loading in spectra"))
     if file_extension == ".json":
-        return list(importing.load_from_json(file_name))
+        return list(tqdm(importing.load_from_json(file_name),
+                    desc="Loading in spectra"))
     if file_extension == ".mgf":
-        return list(importing.load_from_mgf(file_name))
+        return list(tqdm(importing.load_from_mgf(file_name),
+                    desc="Loading in spectra"))
     if file_extension == ".msp":
-        return list(importing.load_from_msp(file_name))
+        return list(tqdm(importing.load_from_msp(file_name),
+                    desc="Loading in spectra"))
     if file_extension == ".mzxml":
-        return list(importing.load_from_mzxml(file_name))
+        return list(tqdm(importing.load_from_mzxml(file_name),
+                    desc="Loading in spectra"))
     if file_extension == ".usi":
-        return list(importing.load_from_usi(file_name))
+        return list(tqdm(importing.load_from_usi(file_name),
+                    desc="Loading in spectra"))
     print(f"File extension of file: {file_name} is not recognized")
     return None
 
