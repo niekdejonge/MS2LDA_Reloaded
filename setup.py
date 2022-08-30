@@ -34,6 +34,6 @@ setup(
         "gensim>=4.0.0",
         "pandas>=1.2.5",
     ],
-    extras_require={"dev": ["pytest", ],
+    extras_require={"dev": ["pytest", "pytest-cov"],
     }
 )
