@@ -26,6 +26,7 @@ def create_smiles_csv_for_moss(input_tsv_file_location: str,
     smiles_df = pd.DataFrame({"ids": ids, "category": category, "smiles": smiles_matching_mass2motif+smiles_not_matching_mass2motif})
     smiles_df.to_csv(output_csv_file_location, index=False, header=False)
 
+
 def select_smiles_not_in_library(smiles: List[str],
                                  all_inchikey_dict: Dict[str, str]):
     """
