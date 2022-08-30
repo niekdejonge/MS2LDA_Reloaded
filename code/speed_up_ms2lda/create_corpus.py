@@ -74,8 +74,9 @@ def create_dict_and_corpus(spectrum_docs: List[SpectrumDocument],
         The directory in which the output files are stored.
     :return: Stores the dictionary and the corpus in seperate files in the dir_for_corpus_and_dict
     """
+    # to do. This seems
     dictionary = corpora.Dictionary(spectrum_docs)
-    dictionary.save_as_text(os.path.join(dir_for_corpus_and_dict, "dictionary"))
+    dictionary.save(os.path.join(dir_for_corpus_and_dict, "dictionary"))
     my_corpus = list(tqdm([spectrumdoc2bow(spectrum_doc, dictionary.token2id)
                            for spectrum_doc in spectrum_docs],
                      desc="Creating corpus"))
@@ -85,4 +86,4 @@ def create_dict_and_corpus(spectrum_docs: List[SpectrumDocument],
 if __name__ == "__main__":
     filtered_spectra = load_and_filter_spectra("../data/Brocadia-Excl1-POS-1.mzML")
     create_dict_and_corpus(filtered_spectra,
-                  "../data/corpus_brocadia_sample")
+                  "../data/test_corpus")
