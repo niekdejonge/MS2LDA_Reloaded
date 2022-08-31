@@ -87,7 +87,6 @@ class Mass2Motif:
                     "loss_probabilities": self.losses.intensities})
 
 
-
 if __name__ == "__main__":
     mass2motif = Mass2Motif(['fragment_375.2225', 'loss_80.0275', 'loss_128.0625', 'loss_141.1025', 'loss_147.0525'],
                             [0.005584277434409811, 0.0012797822397661643, 0.0019930865131162247, 0.0026998426721283244, 0.0032813585667783463],
