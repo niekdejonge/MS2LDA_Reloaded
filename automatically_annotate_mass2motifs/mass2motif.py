@@ -30,7 +30,7 @@ class Mass2Motif:
         losses = []
         loss_probabilities = []
         for i, word in enumerate(words):
-            result = re.search("\A(fragment|loss)_([0-9]+\.[0-9]+)\Z", word)
+            result = re.search("\\A(fragment|loss)_([0-9]+\\.[0-9]+)\\Z", word)
             is_loss = result.group(1) == "loss"
             fragment_mz = float(result.group(2))
             if not is_loss:
