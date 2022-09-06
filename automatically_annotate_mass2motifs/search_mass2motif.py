@@ -40,7 +40,7 @@ class SelectSpectraContainingMass2Motif:
         scores_matrix = []
         for mass2motif in tqdm(self.mass2motifs, "Calculating scores for mass2motif"):
             scores_mass2motif = []
-            for spectrum in self.spectra, "Calculating scores per spectrum":
+            for spectrum in self.spectra:
                 scores_mass2motif.append(similarity_mass2motif_and_spectrum(spectrum, mass2motif))
             scores_matrix.append(scores_mass2motif)
         return pd.DataFrame(scores_matrix, columns=self.smiles_spectra)

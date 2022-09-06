@@ -7,7 +7,7 @@ from automatically_annotate_mass2motifs.search_mass2motif import (overlap_in_fra
                                                                   SelectSpectraContainingMass2Motif,
                                                                   similarity_mass2motif_and_spectrum)
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
-from tests.test_automatically_annotate_mass2motifs.generate_test_data import spectra_with_losses
+from tests.test_automatically_annotate_mass2motifs.generate_test_data import binned_spectra_005
 
 def test_overlap_in_fragments():
     spectrum_fragment = Fragments(np.array([12.3, 14.5, 23.4, 26.7]), np.array([1.0, 0.2, 0.5, 0.3]))
@@ -30,7 +30,7 @@ def test_similarity_mass2motif_and_spectrum():
 
 
 def test_SelectSpectraContainingMass2Motif():
-    spectra = spectra_with_losses()
+    spectra = binned_spectra_005()
 
     mass2motifs = [Mass2Motif(['fragment_100.025', 'loss_200.725', 'loss_128.075'],
                               [0.5, 0.25, 0.1], 0.05),
@@ -40,7 +40,7 @@ def test_SelectSpectraContainingMass2Motif():
     spectra_containing_mass2motif = SelectSpectraContainingMass2Motif(spectra, mass2motifs)
     expected_result = pd.DataFrame([[0.55, 0.05],
                                     [0.00, 0.60]], columns = ["CN=C=O", "C1CCCCC1"])
-    assert np.all(expected_result == spectra_containing_mass2motif.scores_matrix)
+    assert np.all(expected_result == spectra_containing_mass2motif.scores_matrix), "Expected different scores matrix"
     smiles_per_mass2motif = spectra_containing_mass2motif.select_smiles_mass2motif(0.05)
     expected_smiles = pd.Series([['CN=C=O', 'C1CCCCC1'], ['C1CCCCC1']])
     assert np.all(smiles_per_mass2motif == expected_smiles), "Different smiles were expected"
