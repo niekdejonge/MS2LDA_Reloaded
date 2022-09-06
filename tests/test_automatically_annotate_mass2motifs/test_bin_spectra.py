@@ -19,4 +19,8 @@ def test_bin_spectrum():
                          metadata={"smiles": "CN=C=O"})
     expected_result.losses = Fragments(mz=np.array([200.75, 300.15], dtype="float"),
                          intensities=np.array([0.2, 1.0], dtype="float"))
-    assert result.__eq__(expected_result)
+    assert np.all(result.mz == expected_result.mz), "Expected different mz values"
+    assert np.all(result.intensities == expected_result.intensities), "Expected different intensity values"
+    assert np.all(result.losses.mz == expected_result.losses.mz), "Expected different loss mz values"
+    assert np.all(result.losses.intensities == expected_result.losses.intensities), "Expected different loss intensity values"
+

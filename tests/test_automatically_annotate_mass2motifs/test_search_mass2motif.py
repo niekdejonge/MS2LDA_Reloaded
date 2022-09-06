@@ -29,7 +29,7 @@ def test_similarity_mass2motif_and_spectrum():
     assert score == 0.5
 
 
-def test_SelectSpectraContainingMass2Motif():
+def test_select_spectra_matching_mass2motif():
     spectra = binned_spectra_005()
 
     mass2motifs = [Mass2Motif(['fragment_100.025', 'loss_200.725', 'loss_128.075'],
@@ -39,11 +39,18 @@ def test_SelectSpectraContainingMass2Motif():
                    ]
     spectra_containing_mass2motif = SelectSpectraContainingMass2Motif(spectra, mass2motifs)
     expected_result = pd.DataFrame([[0.55, 0.05],
-                                    [0.00, 0.60]], columns = ["CN=C=O", "C1CCCCC1"])
+                                    [0.00, 0.60]])
     assert np.all(expected_result == spectra_containing_mass2motif.scores_matrix), "Expected different scores matrix"
-    smiles_per_mass2motif = spectra_containing_mass2motif.select_smiles_mass2motif(0.05)
-    expected_smiles = pd.Series([['CN=C=O', 'C1CCCCC1'], ['C1CCCCC1']])
-    assert np.all(smiles_per_mass2motif == expected_smiles), "Different smiles were expected"
+    spectra_per_mass2motif = spectra_containing_mass2motif.select_spectra_matching_mass2motif(0.05)
+    expected_spectra_per_mass2motif = [[spectra[0], spectra[1]], [spectra[1]]]
+    assert np.all(spectra_per_mass2motif == expected_spectra_per_mass2motif), "Different spectra were expected"
+    smiles_matching, smiles_not_matching = spectra_containing_mass2motif.select_non_matching_smiles(spectra_per_mass2motif[0])
+    assert set(smiles_matching) == {'CN=C=O', 'C1CCCCC1'}
+    assert smiles_not_matching == []
+    smiles_matching, smiles_not_matching = spectra_containing_mass2motif.select_non_matching_smiles(spectra_per_mass2motif[1])
+    assert smiles_matching == ["C1CCCCC1"]
+    assert smiles_not_matching == ["CN=C=O"]
+
 
 if __name__ == "__main__":
     pass
