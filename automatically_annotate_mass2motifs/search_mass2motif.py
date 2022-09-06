@@ -3,6 +3,7 @@ import pandas as pd
 from tqdm import tqdm
 from matchms import Spectrum, Fragments
 from matchms.metadata_utils import is_valid_smiles
+import matchms.metadata_utils
 import numpy as np
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
 
@@ -10,16 +11,18 @@ from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
 class SelectSpectraContainingMass2Motif:
     def __init__(self,
                  binned_spectra: List[Spectrum],
-                 mass2motifs: List[Mass2Motif]):
+                 mass2motifs: List[Mass2Motif],
+                 assert_correct_spectra: bool = True):
         self.mass2motifs = mass2motifs
         self.bin_size = mass2motifs[0].bin_size
         assert np.all([mass2motif.bin_size == self.bin_size for mass2motif in mass2motifs]), \
             "Expected mass2motifs with the same binning method"
 
         self.spectra = binned_spectra
-        # self.assert_correct_spectra()
-        self.smiles_spectra = [spectrum.get("smiles") for spectrum in self.spectra]
+        if assert_correct_spectra:
+            self.assert_correct_spectra()
         self.scores_matrix = self._similarity_matrix_mass2motifs_and_spectra()
+        self.inchikey_smiles_dict = self.create_inchikeys_smiles_dict()
 
     def assert_correct_spectra(self):
         """Checks if the spectra have the expected format"""
@@ -41,13 +44,41 @@ class SelectSpectraContainingMass2Motif:
             for spectrum in self.spectra:
                 scores_mass2motif.append(similarity_mass2motif_and_spectrum(spectrum, mass2motif))
             scores_matrix.append(scores_mass2motif)
-        return pd.DataFrame(scores_matrix, columns=self.smiles_spectra)
+        return pd.DataFrame(scores_matrix)
 
-    def select_smiles_mass2motif(self, minimal_score) -> pd.Series:
+    def select_spectra_matching_mass2motif(self, minimal_score) -> List[List[Spectrum]]:
         """Returns the smiles of the spectra per Mass2Motif that have a high enough similarity score"""
-        result = self.scores_matrix.apply(lambda row: row[row >= minimal_score].index.tolist(), axis=1)
-        return result
+        spectrum_indexes_per_mass2motif = self.scores_matrix.apply(lambda row: row[row >= minimal_score].index.tolist(), axis=1)
+        spectra_per_mass2motif = []
+        for spectrum_indexes in spectrum_indexes_per_mass2motif:
+            spectra_per_mass2motif.append([self.spectra[i] for i in spectrum_indexes])
+        return spectra_per_mass2motif
 
+    def create_inchikeys_smiles_dict(self):
+        """Creates a dictionary with all inchikeys with one of the smiles that represents this inchikey"""
+        inchikey_dict = {}
+        for spectrum in self.spectra:
+            inchikey = spectrum.get("inchikey")[:14]
+            if inchikey not in inchikey_dict:
+                inchikey_dict[inchikey] = spectrum.get("smiles")
+        return inchikey_dict
+
+    def select_non_matching_smiles(self, spectra: list[Spectrum]):
+        """Selects all inchikeys not in smiles, and returns 1 smile for each
+
+        This is done to prevent overfitting to inchikeys containing many smiles"""
+        matching_inchikeys = []
+        for spectrum in spectra:
+            inchikey = spectrum.get("inchikey")[:14]
+            matching_inchikeys.append(inchikey)
+
+        matching_inchikeys = set(matching_inchikeys)
+        all_inchikeys = set(self.inchikey_smiles_dict.keys())
+        not_matching_inchikeys = [inchikey for inchikey in all_inchikeys if inchikey not in matching_inchikeys]
+
+        matching_smiles = [self.inchikey_smiles_dict[inchikey] for inchikey in matching_inchikeys]
+        not_matching_smiles = [self.inchikey_smiles_dict[inchikey] for inchikey in not_matching_inchikeys]
+        return matching_smiles, not_matching_smiles
 
 def overlap_in_fragments(mass2motif_fragment: Fragments,
                          spectrum_fragment: Fragments):
