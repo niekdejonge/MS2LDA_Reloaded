@@ -39,6 +39,7 @@ def bin_spectrum(spectrum: Spectrum, binner):
     spectrum.losses = losses
     return spectrum
 
+
 def bin_spectra(spectra: List[Spectrum], bin_width):
     binner = Binner(bin_width)
     binned_spectra = []
@@ -46,6 +47,7 @@ def bin_spectra(spectra: List[Spectrum], bin_width):
                          desc="Binning spectra"):
         binned_spectra.append(bin_spectrum(spectrum, binner))
     return binned_spectra
+
 
 if __name__ == "__main__":
     data_dir = "/lustre/BIF/nobackup/jonge094/ms2lda_reloaded/data/"

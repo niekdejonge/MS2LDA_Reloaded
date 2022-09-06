@@ -3,10 +3,8 @@ import pandas as pd
 from tqdm import tqdm
 from matchms import Spectrum, Fragments
 from matchms.metadata_utils import is_valid_smiles
-from matchms.filtering import normalize_intensities
 import numpy as np
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
-from automatically_annotate_mass2motifs.bin_spectra import bin_spectra
 
 
 class SelectSpectraContainingMass2Motif:
@@ -79,7 +77,4 @@ def similarity_mass2motif_and_spectrum(binned_spectrum: Spectrum,
 
 
 if __name__ == "__main__":
-    from clean_library_spectra import convert_file_to_matchms_spectrum_objects
-    binned_library_spectra = convert_file_to_matchms_spectrum_objects("../data/all_gnps_cleaned_filtered_binned_0.005.pickle")
-    # SelectSpectraContainingMass2Motif(binned_library_spectra, mass2motifs)
-
+    pass

@@ -68,9 +68,6 @@ def load_pickled_file(filename: str):
 
 if __name__ == "__main__":
     moss_dir = "/lustre/BIF/nobackup/jonge094/ms2lda_reloaded/data/moss"
-    # spectra = load_pickled_file("C:/Users/jonge094/PycharmProjects/PhD_MS2Query/ms2query/data/libraries_and_models/gnps_15_12_2021/in_between_files/ALL_GNPS_15_12_2021_positive_annotated.pickle")
-    # select_inchikeys_and_smiles(spectra, "C:/Users/jonge094/PycharmProjects/ms2lda_reloaded/data/moss/inchikeys_and_smiles.json")
     create_smiles_csv_for_moss(os.path.join(moss_dir, "test_data_gnps_motif_45.m2_massql_result.txt"),
                                os.path.join(moss_dir, "test_data_gnps_motif_45.m2_massql_result.csv"),
                                os.path.join(moss_dir, "inchikeys_and_smiles.json"))
-

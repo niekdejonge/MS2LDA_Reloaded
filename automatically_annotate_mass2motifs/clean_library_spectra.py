@@ -1,6 +1,6 @@
 import os
 from tqdm import tqdm
-from typing import Union, List, Optional
+from typing import Optional
 from matchms import exporting
 import matchms.filtering as msfilters
 from matchms.logging_functions import set_matchms_logger_level
@@ -19,7 +19,7 @@ class FilterLibrarySpectra:
                  spectra_file_name,
                  ion_mode: str = "positive",
                  already_cleaned = False):
-        assert ion_mode == "positive" or ion_mode == "negative", "ion_mode should be 'postive' or 'negative'"
+        assert ion_mode in ("negative", "positive"), "ion_mode should be 'postive' or 'negative'"
         self.ion_mode = ion_mode
         self.spectra_file_name = spectra_file_name
         # store the filtering steps applied for naming stored files
@@ -48,7 +48,8 @@ class FilterLibrarySpectra:
             # The repair_inchi_inchikey_smiles function will correct misplaced metadata (e.g. inchikeys entered as inchi etc.) and harmonize the entry strings.
             spectrum = msfilters.repair_inchi_inchikey_smiles(spectrum)
 
-            # Where possible (and necessary, i.e. missing): Convert between smiles, inchi, inchikey to complete metadata. This is done using functions from rdkit.
+            # Where possible (and necessary, i.e. missing): Convert between smiles, inchi, inchikey to complete metadata.
+            # This is done using functions from rdkit.
             spectrum = msfilters.repair_inchi_inchikey_smiles(spectrum)
             spectrum = msfilters.derive_inchi_from_smiles(spectrum)
             spectrum = msfilters.derive_smiles_from_inchi(spectrum)
@@ -90,7 +91,7 @@ class FilterLibrarySpectra:
 
     def save_spectra_as_mgf(self, out_file_name: Optional[str] = None):
         if out_file_name is None:
-            file_name_base, file_extension = os.path.splitext(self.spectra_file_name)
+            file_name_base = os.path.splitext(self.spectra_file_name)[0]
             out_file_name = file_name_base + self.processing_log + ".mgf"
         out_file_name = return_non_existing_file_name(out_file_name)
         exporting.save_as_mgf(self.spectra, out_file_name)
@@ -98,7 +99,7 @@ class FilterLibrarySpectra:
 
     def save_pickled_spectra(self, out_file_name: Optional[str] = None):
         if out_file_name is None:
-            file_name_base, file_extension = os.path.splitext(self.spectra_file_name)
+            file_name_base = os.path.splitext(self.spectra_file_name)[0]
             out_file_name = file_name_base + self.processing_log + ".pickle"
         store_pickled_file(self.spectra, out_file_name)
         return out_file_name
@@ -109,4 +110,3 @@ if __name__ == "__main__":
     library_spectra.save_pickled_spectra()
     library_spectra.bin_spectra(0.005)
     library_spectra.save_pickled_spectra()
-

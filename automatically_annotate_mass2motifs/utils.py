@@ -1,5 +1,5 @@
 import os
-from typing import Union, List, Optional
+from typing import List
 import pickle
 from tqdm import tqdm
 from matchms import importing
@@ -12,10 +12,11 @@ def load_pickled_file(file_name):
         loaded_object = pickle.load(file)
     return loaded_object
 
-def store_pickled_file(object,
+def store_pickled_file(object_to_store,
                        file_name):
     return_non_existing_file_name(file_name)
-    pickle.dump(object, open(file_name, 'wb'))
+    with open(file_name, "wb") as file:
+        pickle.dump(object_to_store, file)
 
 def return_non_existing_file_name(file_name):
     """Checks if a path already exists, otherwise creates a new filename with (1)"""

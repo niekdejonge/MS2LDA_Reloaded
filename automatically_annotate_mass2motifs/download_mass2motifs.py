@@ -1,6 +1,6 @@
 from typing import Dict
 import requests
-from mass2motif import Mass2Motif
+from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
 
 
 def get_single_motif_set(motifset_name):
@@ -11,11 +11,11 @@ def get_single_motif_set(motifset_name):
 
     server_url = "http://ms2lda.org/motifdb"
     # Get the list of motif sets
-    output = requests.get(server_url + '/list_motifsets')
+    output = requests.get(server_url + '/list_motifsets', timeout=60)
     motif_set_list = output.json()
 
     motif_set_id = motif_set_list[motifset_name]
-    motif_set = requests.get(server_url + f"/get_motifset/{motif_set_id}").json()
+    motif_set = requests.get(server_url + f"/get_motifset/{motif_set_id}", timeout=60).json()
     return motif_set
 
 
