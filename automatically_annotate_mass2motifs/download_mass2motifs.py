@@ -24,7 +24,7 @@ def convert_json_to_mass2motif(mass2motif_set: Dict):
     for motif_name in mass2motif_set:
         words = list(mass2motif_set[motif_name].keys())
         probabilities = list(mass2motif_set[motif_name].values())
-        mass2motif = Mass2Motif(words, probabilities, motif_name)
+        mass2motif = Mass2Motif(words, probabilities)
         mass2motif_list.append(mass2motif)
     return mass2motif_list
 
@@ -33,5 +33,4 @@ if __name__ == "__main__":
     json_mass_2motif_set = get_single_motif_set("Urine derived Mass2Motifs 2")
     mass2motifs = convert_json_to_mass2motif(json_mass_2motif_set)
     for mass2motif in mass2motifs:
-        print(mass2motif)
-        print(mass2motif.bin_size)
+        print(sum(mass2motif.fragments.intensities) + sum(mass2motif.losses.intensities))
