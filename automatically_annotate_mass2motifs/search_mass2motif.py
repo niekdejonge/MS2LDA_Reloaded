@@ -3,7 +3,6 @@ import pandas as pd
 from tqdm import tqdm
 from matchms import Spectrum, Fragments
 from matchms.metadata_utils import is_valid_smiles
-import matchms.metadata_utils
 import numpy as np
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
 
@@ -63,7 +62,7 @@ class SelectSpectraContainingMass2Motif:
                 inchikey_dict[inchikey] = spectrum.get("smiles")
         return inchikey_dict
 
-    def select_non_matching_smiles(self, spectra: list[Spectrum]):
+    def select_non_matching_smiles(self, spectra: List[Spectrum]):
         """Selects all inchikeys not in smiles, and returns 1 smile for each
 
         This is done to prevent overfitting to inchikeys containing many smiles"""
