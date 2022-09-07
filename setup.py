@@ -33,6 +33,7 @@ setup(
         "spec2vec",
         "gensim>=4.0.0",
         "pandas>=1.2.5",
+        "rdkit"
     ],
     extras_require={"dev": ["pytest",
                             "pytest-cov",
