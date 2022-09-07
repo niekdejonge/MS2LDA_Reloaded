@@ -1,3 +1,4 @@
+import os
 from typing import List
 import pandas as pd
 from tqdm import tqdm
@@ -5,6 +6,7 @@ from matchms import Spectrum, Fragments
 from matchms.metadata_utils import is_valid_smiles
 import numpy as np
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
+from automatically_annotate_mass2motifs.utils import return_non_existing_file_name
 
 
 class SelectSpectraContainingMass2Motif:
@@ -78,6 +80,30 @@ class SelectSpectraContainingMass2Motif:
         matching_smiles = [self.inchikey_smiles_dict[inchikey] for inchikey in matching_inchikeys]
         not_matching_smiles = [self.inchikey_smiles_dict[inchikey] for inchikey in not_matching_inchikeys]
         return matching_smiles, not_matching_smiles
+
+    def create_moss_file(self, list_of_matching_spectra: List[Spectrum], output_csv_file_location):
+        """Creates a file containing the smiles matching and not matching a mass2motif readable by MOSS
+
+        :param list_of_smiles:
+        :param output_csv_file_location:
+        :return:
+        """
+        output_csv_file_location = return_non_existing_file_name(output_csv_file_location)
+        smiles_matching_mass2motif, smiles_not_matching_mass2motif = self.select_non_matching_smiles(list_of_matching_spectra)
+        category = np.append(np.zeros(len(smiles_matching_mass2motif), dtype=np.int8),
+                             np.ones(len(smiles_not_matching_mass2motif), dtype=np.int8))
+        ids = np.arange(0, len(category))
+        smiles_df = pd.DataFrame(
+            {"ids": ids, "category": category, "smiles": smiles_matching_mass2motif + smiles_not_matching_mass2motif})
+        smiles_df.to_csv(output_csv_file_location, index=False, header=False)
+
+    def create_all_moss_files(self, output_folder, minimal_score):
+        """Creates moss files for all mass2motifs"""
+        spectra_per_mass2motifs = self.select_spectra_matching_mass2motif(minimal_score)
+        for i, spectra_per_mass2motif in enumerate(spectra_per_mass2motifs):
+            output_file_name = os.path.join(output_folder, f"mass2motif_{i}.smiles")
+            self.create_moss_file(spectra_per_mass2motif, output_file_name)
+
 
 def overlap_in_fragments(mass2motif_fragment: Fragments,
                          spectrum_fragment: Fragments):
