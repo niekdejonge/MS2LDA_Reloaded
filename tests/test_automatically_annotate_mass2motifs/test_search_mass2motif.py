@@ -1,3 +1,4 @@
+import os.path
 from typing import List
 
 import pandas as pd
@@ -29,7 +30,7 @@ def test_similarity_mass2motif_and_spectrum():
     assert score == 0.5
 
 
-def test_select_spectra_matching_mass2motif():
+def test_select_spectra_matching_mass2motif(tmp_path):
     spectra = binned_spectra_005()
 
     mass2motifs = [Mass2Motif(['fragment_100.025', 'loss_200.725', 'loss_128.075'],
@@ -50,6 +51,13 @@ def test_select_spectra_matching_mass2motif():
     smiles_matching, smiles_not_matching = spectra_containing_mass2motif.select_non_matching_smiles(spectra_per_mass2motif[1])
     assert smiles_matching == ["C1CCCCC1"]
     assert smiles_not_matching == ["CN=C=O"]
+    spectra_containing_mass2motif.create_all_moss_files(tmp_path, 0.05)
+    assert os.path.exists(os.path.join(tmp_path, "mass2motif_0.smiles")), "Moss smiles file was not created"
+    assert os.path.exists(os.path.join(tmp_path, "mass2motif_1.smiles")), "Moss smiles file was not created"
+    with open(os.path.join(tmp_path, "mass2motif_0.smiles"), "rb") as file_0:
+        assert set(file_0.readlines()) == {b'0,0,C1CCCCC1\n', b'1,0,CN=C=O\n'}, "Expected different output in moss file"
+    with open(os.path.join(tmp_path, "mass2motif_1.smiles"), "rb") as file_0:
+        assert set(file_0.readlines()) == {b'0,0,C1CCCCC1\n', b'1,1,CN=C=O\n'}, "Expected different output in moss file"
 
 
 if __name__ == "__main__":
