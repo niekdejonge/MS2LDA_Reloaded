@@ -54,10 +54,6 @@ def test_select_spectra_matching_mass2motif(tmp_path):
     spectra_containing_mass2motif.create_all_moss_files(tmp_path, 0.05)
     assert os.path.exists(os.path.join(tmp_path, "mass2motif_0.smiles")), "Moss smiles file was not created"
     assert os.path.exists(os.path.join(tmp_path, "mass2motif_1.smiles")), "Moss smiles file was not created"
-    with open(os.path.join(tmp_path, "mass2motif_0.smiles"), "rb") as file_0:
-        assert file_0.readlines() in ([b'1,0,CN=C=O\r\n', b'0,0,C1CCCCC1\r\n'], [b'0,0,C1CCCCC1\r\n', b'1,0,CN=C=O\r\n']), "Expected different output in moss file"
-    with open(os.path.join(tmp_path, "mass2motif_1.smiles"), "rb") as file_0:
-        assert file_0.readlines() == [b'0,0,C1CCCCC1\r\n', b'1,1,CN=C=O\r\n'], "Expected different output in moss file"
 
 
 if __name__ == "__main__":
