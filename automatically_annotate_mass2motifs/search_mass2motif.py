@@ -15,9 +15,10 @@ class SelectSpectraContainingMass2Motif:
                  mass2motifs: List[Mass2Motif],
                  assert_correct_spectra: bool = True):
         self.mass2motifs = mass2motifs
-        self.bin_size = mass2motifs[0].bin_size
+        self.bin_size = \
+            mass2motifs[0].bin_size
         assert np.all([mass2motif.bin_size == self.bin_size for mass2motif in mass2motifs]), \
-            "Expected mass2motifs with the same binning method"
+            f"Expected mass2motifs with the same binning method found {[mass2motif.bin_size for mass2motif in mass2motifs]}"
 
         self.spectra = binned_spectra
         if assert_correct_spectra:
@@ -100,8 +101,12 @@ class SelectSpectraContainingMass2Motif:
     def create_all_moss_files(self, output_folder: str, minimal_score: float):
         """Creates moss files for all mass2motifs"""
         spectra_per_mass2motifs = self.select_spectra_matching_mass2motif(minimal_score)
+        assert os.path.isfile(output_folder), "A folder is expected, but a file is given"
+        if not os.path.isdir(output_folder):
+            os.mkdir(output_folder)
         for i, spectra_per_mass2motif in enumerate(spectra_per_mass2motifs):
             output_file_name = os.path.join(output_folder, f"mass2motif_{i}.smiles")
+            assert os.path.isfile(output_file_name), f"The file {output_file_name} already exists"
             self.create_moss_file(spectra_per_mass2motif, output_file_name)
 
 
