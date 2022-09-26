@@ -25,12 +25,12 @@ class FilterLibrarySpectra:
         # store the filtering steps applied for naming stored files
         self.processing_log = ""
         set_matchms_logger_level("ERROR")
-        self.spectra = convert_file_to_matchms_spectrum_objects(self.spectra_file_name, filter_metadata=False)
+        self.spectra = convert_file_to_matchms_spectrum_objects(self.spectra_file_name, filter_metadata=True)
 
         if not already_cleaned:
             # clean and select spectra
-            self.apply_metadata_filters()
             self.select_spectra_in_ion_mode()
+            self.apply_metadata_filters()
             self.remove_spectra_missing_smiles_or_inchi()
 
 
