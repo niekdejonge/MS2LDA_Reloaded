@@ -97,7 +97,7 @@ class SelectSpectraContainingMass2Motif:
             {"ids": ids, "category": category, "smiles": smiles_matching_mass2motif + smiles_not_matching_mass2motif})
         smiles_df.to_csv(output_csv_file_location, index=False, header=False)
 
-    def create_all_moss_files(self, output_folder, minimal_score):
+    def create_all_moss_files(self, output_folder: str, minimal_score: float):
         """Creates moss files for all mass2motifs"""
         spectra_per_mass2motifs = self.select_spectra_matching_mass2motif(minimal_score)
         for i, spectra_per_mass2motif in enumerate(spectra_per_mass2motifs):

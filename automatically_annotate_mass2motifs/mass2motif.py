@@ -13,7 +13,10 @@ class Mass2Motif:
 
     def __init__(self, words: List[str],
                  probabilities: List[float],
-                 bin_size: Optional[float] = None):
+                 bin_size: Optional[float] = None,
+                 motif_name: str = None,
+                 motif_set_name:str = None,
+                 annotation: str = None):
         self.assert_correct_input(words, probabilities)
 
         peaks, peak_probabilities, losses, loss_probabilities = self.convert_words_to_peaks(words, probabilities)
@@ -24,7 +27,9 @@ class Mass2Motif:
         else:
             self.bin_size = bin_size
             self.assert_correct_bin_size()
-
+        self.motif_name = motif_name
+        self.motif_set_name = motif_set_name
+        self.annotation = annotation
 
     @staticmethod
     def convert_words_to_peaks(words, probabilities):

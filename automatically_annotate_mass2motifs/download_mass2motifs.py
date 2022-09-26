@@ -16,7 +16,8 @@ def get_single_motif_set(motifset_name):
 
     motif_set_id = motif_set_list[motifset_name]
     motif_set = requests.get(server_url + f"/get_motifset/{motif_set_id}", timeout=60).json()
-    return motif_set
+    motif_set_metadata= requests.get(server_url + f"/get_motifset_metadata/{motif_set_id}", timeout=60).json()
+    return motif_set, motif_set_metadata
 
 
 def convert_json_to_mass2motif(mass2motif_set: Dict):
@@ -24,9 +25,13 @@ def convert_json_to_mass2motif(mass2motif_set: Dict):
     for motif_name in mass2motif_set:
         words = list(mass2motif_set[motif_name].keys())
         probabilities = list(mass2motif_set[motif_name].values())
-        mass2motif = Mass2Motif(words, probabilities)
+        mass2motif = Mass2Motif(words, probabilities, motif_name=motif_name)
         mass2motif_list.append(mass2motif)
     return mass2motif_list
+
+def get_all_motifsets():
+    pass
+
 
 
 if __name__ == "__main__":
