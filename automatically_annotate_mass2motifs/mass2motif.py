@@ -1,6 +1,7 @@
 from typing import List, Optional
 import numpy as np
 from math import gcd
+from typing import Dict
 from functools import reduce
 from matchms import Fragments
 import re
@@ -23,7 +24,7 @@ class Mass2Motif:
         self.fragments = Fragments(np.array(peaks), np.array(peak_probabilities))
         self.losses = Fragments(np.array(losses), np.array(loss_probabilities))
         if bin_size is None:
-            self.bin_size = self.get_bin_size(words)
+            self.bin_size = self.largest_possible_bin_size(words)
         else:
             self.bin_size = bin_size
             self.assert_correct_bin_size()
@@ -76,8 +77,8 @@ class Mass2Motif:
             assert isinstance(probability, float)
 
     @staticmethod
-    def get_bin_size(words):
-        """Determines the bin_size from the fragment sizes"""
+    def largest_possible_bin_size(words):
+        """Determines the largest possible_bin_size from the fragment sizes"""
         list_of_decimals = []
         assert len(words) > 0, "More than 0 words are expected in a mass2motif"
         for word in words:
@@ -87,8 +88,8 @@ class Mass2Motif:
 
         nr_of_decimals = len(decimals_str)
         greatest_common_denominator = reduce(gcd, list_of_decimals)
-        bin_size = greatest_common_denominator/(10**nr_of_decimals)*2
-        return bin_size
+        largest_possible_bin_size = greatest_common_denominator/(10**nr_of_decimals)*2
+        return largest_possible_bin_size
 
     def assert_correct_bin_size(self):
         assert isinstance(self.bin_size, float), "bin size is expected to be float"
