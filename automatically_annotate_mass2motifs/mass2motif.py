@@ -1,10 +1,8 @@
-from typing import List, Optional
+import ast
+from typing import List
 import numpy as np
-from math import gcd
-from typing import Dict
-from functools import reduce
 from matchms import Fragments
-import re
+import json
 
 
 class Mass2Motif:
@@ -12,84 +10,25 @@ class Mass2Motif:
 
     """
 
-    def __init__(self, words: List[str],
-                 probabilities: List[float],
-                 bin_size: Optional[float] = None,
+    def __init__(self,
+                 fragments: List[float],
+                 fragment_probabilities: List[float],
+                 losses: List[float],
+                 loss_probabilities: List[float],
+                 bin_size: float,
                  motif_name: str = None,
                  motif_set_name:str = None,
                  annotation: str = None):
-        self.assert_correct_input(words, probabilities)
+        assert all(fragments[i] <= fragments[i+1] for i in range(len(fragments) - 1)), "Expected sorted fragments"
+        assert all(losses[i] <= losses[i+1] for i in range(len(losses) - 1)), "Expected sorted losses"
 
-        peaks, peak_probabilities, losses, loss_probabilities = self.convert_words_to_peaks(words, probabilities)
-        self.fragments = Fragments(np.array(peaks), np.array(peak_probabilities))
+        self.fragments = Fragments(np.array(fragments), np.array(fragment_probabilities))
         self.losses = Fragments(np.array(losses), np.array(loss_probabilities))
-        if bin_size is None:
-            self.bin_size = self.largest_possible_bin_size(words)
-        else:
-            self.bin_size = bin_size
-            self.assert_correct_bin_size()
+        self.bin_size = bin_size
+        self.assert_correct_bin_size()
         self.motif_name = motif_name
         self.motif_set_name = motif_set_name
         self.annotation = annotation
-
-    @staticmethod
-    def convert_words_to_peaks(words, probabilities):
-        fragments_dict = {}
-        losses_dict = {}
-        for i, word in enumerate(words):
-            result = re.search("\\A(fragment|loss)_([0-9]+\\.[0-9]+)\\Z", word)
-            is_loss = result.group(1) == "loss"
-            fragment_mz = float(result.group(2))
-            if not is_loss:
-                assert fragment_mz not in fragments_dict, "No duplicated fragments are expected in 1 mass2motif"
-                fragments_dict[fragment_mz] = probabilities[i]
-            else:
-                assert fragment_mz not in losses_dict, "No duplicated losses are expected in 1 mass2motif"
-                losses_dict[fragment_mz] = probabilities[i]
-        fragments = sorted(fragments_dict)
-        losses = sorted(losses_dict)
-        fragment_probabilities = [fragments_dict[fragment] for fragment in fragments]
-        loss_probabilities = [losses_dict[loss] for loss in losses]
-        return fragments, fragment_probabilities, losses, loss_probabilities
-
-    @staticmethod
-    def assert_correct_input(words, probabilities):
-        """Checks if words and probabilities are in the expected format
-        """
-        assert isinstance(words, list)
-        assert isinstance(probabilities, list)
-        assert len(words) > 0, "More than 0 words are expected in a mass2motif"
-        assert len(words) == len(probabilities), "An equal number of words and probabilities was expected"
-        for word in words:
-            assert isinstance(word, str), "A list of strings was expected as words"
-            word_and_fragment = word.split("_")
-            assert len(word_and_fragment) == 2, "Words should contain 1 underscore"
-            assert word_and_fragment[0] == "fragment" or \
-                   word_and_fragment[0] == "loss", "Words should start with fragment or loss"
-            fragment = word_and_fragment[1]
-            whole_number_and_decimal = fragment.split(".")
-            assert len(word_and_fragment) == 2, "The mz should be seperated by a '.'"
-            whole_number = whole_number_and_decimal[0]
-            decimal = whole_number_and_decimal[1]
-            assert whole_number.isdigit(), "An unexpected word format was given"
-            assert decimal.isdigit(), "An unexpected word format was given"
-        for probability in probabilities:
-            assert isinstance(probability, float)
-
-    @staticmethod
-    def largest_possible_bin_size(words):
-        """Determines the largest possible_bin_size from the fragment sizes"""
-        list_of_decimals = []
-        assert len(words) > 0, "More than 0 words are expected in a mass2motif"
-        for word in words:
-            decimals_str = word.split(".", 1)[1]
-            decimals = int(decimals_str)
-            list_of_decimals.append(decimals)
-
-        nr_of_decimals = len(decimals_str)
-        greatest_common_denominator = reduce(gcd, list_of_decimals)
-        largest_possible_bin_size = greatest_common_denominator/(10**nr_of_decimals)*2
-        return largest_possible_bin_size
 
     def assert_correct_bin_size(self):
         assert isinstance(self.bin_size, float), "bin size is expected to be float"
@@ -108,10 +47,54 @@ class Mass2Motif:
                     "losses": self.losses.mz,
                     "loss_probabilities": self.losses.intensities})
 
+    def to_dict(self) -> dict:
+        """Return a dictionary representation of a spectrum."""
+        class_dict = self.__dict__
+        class_dict["fragments"] = np.vstack((self.fragments.mz, self.fragments.intensities)).T.tolist()
+        class_dict["losses"] = np.vstack((self.losses.mz, self.losses.intensities)).T.tolist()
+        return class_dict
+
+    def __eq__(self, other):
+        return \
+            self.fragments == other.fragments and \
+            self.losses == other.losses and \
+            self.bin_size == other.bin_size and \
+            self.motif_name == other.motif_name and \
+            self.motif_set_name == other.motif_set_name and \
+            self.annotation == other.annotation
+
+
+def save_mass2motifs_json(mass2motifs: List[Mass2Motif],
+                     file_name):
+    if not isinstance(mass2motifs, list):
+        mass2motifs = [mass2motifs]
+    json_str = []
+    for mass2motif in mass2motifs:
+        json_str.append(json.dumps(mass2motif.to_dict()))
+    with open(file_name, "w", encoding="utf-8") as file:
+        json.dump(json_str, file, indent=3)
+
+def load_mass2motifs_json(file_name) -> List[Mass2Motif]:
+    with open(file_name, 'rb') as file:
+        mass2motifs = []
+        for spectrum_dict in json.load(file):
+            spectrum_dict = ast.literal_eval(spectrum_dict)
+            mass2motifs.append(Mass2Motif(
+                fragments=list(np.array(spectrum_dict["fragments"])[:, 0]),
+                fragment_probabilities=list(np.array(spectrum_dict["fragments"])[:, 1]),
+                losses=list(np.array(spectrum_dict["losses"])[:, 0]),
+                loss_probabilities=list(np.array(spectrum_dict["losses"])[:, 1]),
+                bin_size=spectrum_dict["bin_size"],
+                motif_name=spectrum_dict["motif_name"],
+                motif_set_name=spectrum_dict["motif_set_name"],
+                annotation=spectrum_dict["annotation"]))
+    return mass2motifs
 
 if __name__ == "__main__":
-    pass
-    # mass2motif = Mass2Motif(['fragment_375.2225', 'loss_80.0275', 'loss_128.0625', 'loss_141.1025', 'loss_147.0525'],
-    #                         [0.005584277434409811, 0.0012797822397661643, 0.0019930865131162247, 0.0026998426721283244, 0.0032813585667783463],
-    #                         'Urine_MM_motif_319.m2m')
-    # print(mass2motif)
+    from automatically_annotate_mass2motifs.download_mass2motifs import download_motif_set_from_motifdb
+    mass2motifs = download_motif_set_from_motifdb("Urine derived Mass2Motifs 2", 0.005)
+    file_name = "../data/test/test_store_mass2motifs.json"
+    # save_mass2motifs_json(mass2motifs, file_name)
+    result = load_mass2motifs_json(file_name)
+    for i, mass2motif in enumerate(result):
+        print(mass2motif == mass2motifs[i])
