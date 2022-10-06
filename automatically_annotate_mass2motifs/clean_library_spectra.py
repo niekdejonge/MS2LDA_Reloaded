@@ -72,7 +72,6 @@ class FilterLibrarySpectra:
         self.spectra = fully_annotated_spectra
         self.processing_log += "_filtered"
 
-
     def select_spectra_in_ion_mode(self):
         spectra_in_correct_ion_mode = []
         for spectrum in tqdm(self.spectra, desc=f"Selecting spectra in {self.ion_mode} ion mode"):
