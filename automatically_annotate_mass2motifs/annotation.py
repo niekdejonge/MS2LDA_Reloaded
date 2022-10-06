@@ -71,9 +71,6 @@ def parse_moss_file_name(file_name):
     return mass2motif_name, mass2motif_similarity_threshold
 
 
-def create_annotation_from_moss_sub_file(moss_file_name) -> Annotation:
-    pass
-
 def create_annotations_from_annotations_file():
     """Creates Annotations objects from a file"""
     pass
