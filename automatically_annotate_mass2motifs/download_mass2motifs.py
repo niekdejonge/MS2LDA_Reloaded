@@ -46,7 +46,7 @@ def get_annotations(motifset_name: str, motif_name: str) -> str:
 
 
 def convert_words_to_peaks(words: List[str], probabilities: List[float]) -> \
-        Tuple[list[float], list[float], list[float], list[float]]:
+        Tuple[List[float], List[float], List[float], List[float]]:
     """Converts words and probabilites into fragments, losses and probabilities
     """
     assert_correct_input(words, probabilities)
