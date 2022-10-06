@@ -1,4 +1,3 @@
-import os
 from typing import List
 import numpy as np
 from matchms import Spectrum, Fragments
