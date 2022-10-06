@@ -63,7 +63,7 @@ def load_moss_results(file_name: str) -> Optional[pd.DataFrame]:
 def parse_moss_file_name(file_name):
     """Parses the file name of a moss file"""
 
-    match = re.match("\Amass2motif_(.*)_min_(.*).sub\Z", file_name)
+    match = re.match(r"\Amass2motif_(.*)_min_(.*).sub\Z", file_name)
     if match is None:
         return None
     mass2motif_name = match.group(0)
