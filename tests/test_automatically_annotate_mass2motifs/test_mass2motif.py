@@ -31,12 +31,8 @@ def test_convert_words_to_peaks_unordered():
 
 
 def test_creating_mass2motif_with_correct_mass_bin():
-    mass2motif = Mass2Motif(
-        fragments=[375.2225],
-        fragment_probabilities=[0.0055],
-        losses=[80.0275, 128.0625],
-        loss_probabilities=[0.0012, 0.0019],
-        bin_size=0.005)
+    mass2motif = Mass2Motif(fragments=[375.2225], fragment_probabilities=[0.0055], losses=[80.0275, 128.0625],
+                            loss_probabilities=[0.0012, 0.0019], bin_size=0.005)
     assert mass2motif.fragments.mz == [375.2225]
     assert np.all(mass2motif.losses.mz == [80.0275, 128.0625])
     assert mass2motif.fragments.intensities == [0.0055]
@@ -47,12 +43,8 @@ def test_creating_mass2motif_with_correct_mass_bin():
 def test_creating_mass2motif_with_incorrect_mass_bin():
     error_raised = False
     try:
-        mass2motif = Mass2Motif(
-            fragments=[375.2225],
-            fragment_probabilities=[0.0055],
-            losses=[80.0275, 128.0625],
-            loss_probabilities=[0.0012, 0.0019],
-            bin_size=0.5)
+        mass2motif = Mass2Motif(fragments=[375.2225], fragment_probabilities=[0.0055], losses=[80.0275, 128.0625],
+                                loss_probabilities=[0.0012, 0.0019], bin_size=0.5)
     except AssertionError:
         error_raised = True
     assert error_raised, "An assert should warn for a wrongly specified bin_size"
