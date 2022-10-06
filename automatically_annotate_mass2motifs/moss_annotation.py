@@ -27,7 +27,6 @@ def run_moss(smiles_file_name,
              output_file_name,
              minimal_support,
              maximal_support_complement):
-    print(os.path.dirname(__file__))
     assert os.path.isfile(smiles_file_name), "The smiles file does not exist"
     assert not os.path.isfile(output_file_name), "The output file already exists"
     subprocess.run(["java", "-cp",
