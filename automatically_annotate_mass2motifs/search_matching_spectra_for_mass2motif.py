@@ -1,4 +1,3 @@
-import os
 from typing import List, Optional
 import pandas as pd
 from tqdm import tqdm
@@ -6,7 +5,6 @@ from matchms import Spectrum, Fragments
 from matchms.metadata_utils import is_valid_smiles
 import numpy as np
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
-from automatically_annotate_mass2motifs.utils import return_non_existing_file_name
 
 
 class SelectSpectraContainingMass2Motif:

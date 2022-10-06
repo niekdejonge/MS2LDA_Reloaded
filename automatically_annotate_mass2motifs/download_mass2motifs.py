@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 import requests
 from math import gcd
 from functools import reduce
@@ -93,7 +93,7 @@ def assert_correct_input(words: List[str], probabilities: List[float]):
         assert isinstance(probability, float)
 
 
-def largest_possible_bin_size(words):
+def get_largest_possible_bin_size(words):
     """Determines the largest possible_bin_size from the fragment sizes"""
     list_of_decimals = []
     assert len(words) > 0, "More than 0 words are expected in a mass2motif"

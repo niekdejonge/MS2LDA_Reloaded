@@ -1,11 +1,7 @@
 import os
-import pickle
-from matchms.metadata_utils import is_valid_smiles
-
 from automatically_annotate_mass2motifs.download_mass2motifs import download_motif_set_from_motifdb
 from automatically_annotate_mass2motifs.search_matching_spectra_for_mass2motif import SelectSpectraContainingMass2Motif
 from automatically_annotate_mass2motifs.clean_library_spectra import FilterLibrarySpectra
-from automatically_annotate_mass2motifs.utils import convert_file_to_matchms_spectrum_objects
 from automatically_annotate_mass2motifs.utils import store_pickled_file, load_pickled_file
 
 def get_cleaned_and_binned_spectra(raw_library_spectra_file, bin_size):

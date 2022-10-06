@@ -7,8 +7,9 @@ from tqdm import tqdm
 import subprocess
 from automatically_annotate_mass2motifs.utils import return_non_existing_file_name
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
-from automatically_annotate_mass2motifs.search_matching_spectra_for_mass2motif import SelectSpectraContainingMass2Motif, similarity_mass2motif_and_spectrum
+from automatically_annotate_mass2motifs.search_matching_spectra_for_mass2motif import SelectSpectraContainingMass2Motif
 from automatically_annotate_mass2motifs.annotation import load_moss_results, Annotation
+
 
 def create_moss_input_file(smiles_matching_mass2motif,
                            smiles_not_matching_mass2motif,
@@ -21,6 +22,7 @@ def create_moss_input_file(smiles_matching_mass2motif,
         {"ids": ids, "category": category, "smiles": smiles_matching_mass2motif + smiles_not_matching_mass2motif})
     smiles_df.to_csv(output_csv_file_location, index=False, header=False)
 
+
 def run_moss(smiles_file_name,
              output_file_name,
              minimal_support,
@@ -29,6 +31,7 @@ def run_moss(smiles_file_name,
     assert not os.path.isfile(output_file_name), "The output file already exists"
     subprocess.run(["java", "-cp", "MolecularSubstructureMiner/moss.jar", "moss.Miner",
                     f"-s{minimal_support}", f"-S{maximal_support_complement}", smiles_file_name, output_file_name])
+
 
 def get_annotations(matching_spectra_selector: SelectSpectraContainingMass2Motif,
                     similarity_threshold,
@@ -84,5 +87,13 @@ def get_annotations(matching_spectra_selector: SelectSpectraContainingMass2Motif
     return mass2motifs
 
 
-if __name__ =="__main__":
-    run_moss("../data/moss/example1.smiles", "../data/moss/example1.sub", 50, 70)
+if __name__ == "__main__":
+    moss_input_file = os.path.join("../data/moss/example2.smiles")
+    moss_output_file = os.path.join("../data/moss/example2.sub")
+    with open(moss_input_file, "w") as file:
+        file.writelines(['0,0,CCC=O\n', '1,0,CCC\n', '2,1,CCCC\n', '3,1,CC\n'])
+    run_moss(moss_input_file, moss_output_file, 0, 100)
+
+    with open(moss_output_file, "r") as output:
+        result = output.readlines()
+        print(result)

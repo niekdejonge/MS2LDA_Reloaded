@@ -79,4 +79,3 @@ def save_annotations_in_file(annotations: List[Annotation],
                              file_name) -> None:
     """Saves multiple annotations in one file"""
     pass
-

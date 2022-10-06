@@ -1,5 +1,5 @@
 import ast
-from typing import List, Optional
+from typing import List, Optional, Union
 import numpy as np
 from matchms import Fragments
 import json
@@ -80,7 +80,7 @@ class Mass2Motif:
             self.manual_annotation == other.manual_annotation
 
 
-def save_mass2motifs_json(mass2motifs: List[Mass2Motif],
+def save_mass2motifs_json(mass2motifs: Union[List[Mass2Motif], Mass2Motif],
                           file_name):
     if not isinstance(mass2motifs, list):
         mass2motifs = [mass2motifs]
