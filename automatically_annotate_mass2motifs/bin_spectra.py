@@ -3,10 +3,9 @@ from typing import List
 from tqdm import tqdm
 from matchms import Spectrum, Fragments
 from matchms.filtering import add_losses
-from speed_up_ms2lda.utils import convert_file_to_matchms_spectrum_objects
 
 
-class Binner():
+class Binner:
     """Class for creating bins and storing settings"""
     def __init__(self, bin_width):
         self.bin_width = bin_width
@@ -28,7 +27,9 @@ class Binner():
         return binned_masses
 
 
-def bin_spectrum(spectrum: Spectrum, binner):
+def bin_spectrum(spectrum: Spectrum,
+                 binner: Binner) -> Spectrum:
+    """Bins one spectrum"""
     if spectrum.losses is None:
         spectrum = add_losses(spectrum)
     binned_masses = binner.return_binned_masses(spectrum.mz, spectrum.intensities)
@@ -40,18 +41,12 @@ def bin_spectrum(spectrum: Spectrum, binner):
     return spectrum
 
 
-def bin_spectra(spectra: List[Spectrum], bin_width):
+def bin_spectra(spectra: List[Spectrum],
+                bin_width) -> List[Spectrum]:
+    """Bins all spectra"""
     binner = Binner(bin_width)
     binned_spectra = []
     for spectrum in tqdm(spectra,
                          desc="Binning spectra"):
         binned_spectra.append(bin_spectrum(spectrum, binner))
     return binned_spectra
-
-
-if __name__ == "__main__":
-    data_dir = "/lustre/BIF/nobackup/jonge094/ms2lda_reloaded/data/"
-    # data_dir = "C:/Users/jonge094/PycharmProjects/ms2lda_reloaded/data"
-
-    spectra = convert_file_to_matchms_spectrum_objects(data_dir + "/Brocadia-Excl1-POS-1.mzML")
-    bin_spectra(spectra, 0.05)
