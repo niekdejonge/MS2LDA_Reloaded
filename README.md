@@ -7,5 +7,5 @@ flowchart TD
     Mass2Motif --> |List: Mass2Motif| SelectSpectraContainingMass2Motif
     SelectSpectraContainingMass2Motif --> |smiles per mass2motif| create_moss_input
     create_moss_input --> |file with smiles in seletion and outside selection| run_moss
-    run_moss --> subsctructures
+    run_moss --> Annotation
 ```
