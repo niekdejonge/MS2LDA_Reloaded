@@ -99,7 +99,7 @@ def get_annotations(matching_spectra_selector: SelectSpectraContainingMass2Motif
                                          maximal_relative_support_complement,
                                          base_file_name)
 
-        mass2motif.manual_annotation = annotation
+        mass2motif.add_moss_annotation(annotation)
     # Deletes the temporary directory
     if temp_dir is not None:
         temp_dir.cleanup()

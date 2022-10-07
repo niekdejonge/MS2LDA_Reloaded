@@ -19,8 +19,7 @@ class Mass2Motif:
                  bin_size: float,
                  motif_name: Optional[str] = None,
                  motif_set_name: Optional[str] = None,
-                 manual_annotation: Optional[str] = None,
-                 moss_annotations: Optional[List[Annotation]] = None):
+                 manual_annotation: Optional[str] = None):
         assert all(fragments[i] <= fragments[i+1] for i in range(len(fragments) - 1)), "Expected sorted fragments"
         assert all(losses[i] <= losses[i+1] for i in range(len(losses) - 1)), "Expected sorted losses"
 
@@ -31,7 +30,7 @@ class Mass2Motif:
         self.motif_name = motif_name
         self.motif_set_name = motif_set_name
         self.manual_annotation = manual_annotation
-        self.moss_annotations = moss_annotations
+        self.moss_annotations = []
         self._assert_correct_types()
 
     def _assert_correct_types(self):
@@ -79,6 +78,14 @@ class Mass2Motif:
             self.motif_set_name == other.motif_set_name and \
             self.manual_annotation == other.manual_annotation
 
+    def add_moss_annotation(self, new_annotation: Annotation):
+        assert isinstance(new_annotation, Annotation), "Expected type Annotation"
+        for annotation in self.moss_annotations:
+            assert annotation.minimal_similarity == new_annotation.minimal_similarity and \
+                   annotation.moss_minimal_relative_support == new_annotation.moss_minimal_relative_support and \
+                   annotation.moss_maximal_relative_support_complement == new_annotation.moss_minimal_relative_support, \
+                "The annotation with these settings is already stored in this Mass2Motif"
+        self.moss_annotations.append(new_annotation)
 
 def save_mass2motifs_json(mass2motifs: Union[List[Mass2Motif], Mass2Motif],
                           file_name):
