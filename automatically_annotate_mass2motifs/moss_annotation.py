@@ -34,6 +34,27 @@ def run_moss(smiles_file_name,
                     "moss.Miner",
                     f"-s{minimal_support}", f"-S{maximal_support_complement}", smiles_file_name, output_file_name])
 
+def get_moss_annotation(smiles_matching_mass2motif,
+                        smiles_not_matching_mass2motif,
+                        similarity_threshold,
+                        minimal_relative_support,
+                        maximal_relative_support_complement,
+                        output_base_file_name):
+    # Creates output file names
+    moss_input_file_name = return_non_existing_file_name(output_base_file_name + ".smiles")
+    moss_output_file_name = return_non_existing_file_name(output_base_file_name + ".sub")
+
+    create_moss_input_file(smiles_matching_mass2motif, smiles_not_matching_mass2motif, moss_input_file_name)
+    run_moss(moss_input_file_name,
+             output_file_name=moss_output_file_name,
+             minimal_support=minimal_relative_support,
+             maximal_support_complement=maximal_relative_support_complement)
+    moss_results = load_moss_results(moss_output_file_name)
+    annotation = Annotation(moss_results,
+                            similarity_threshold,
+                            minimal_relative_support,
+                            maximal_relative_support_complement)
+    return annotation
 
 def get_annotations(matching_spectra_selector: SelectSpectraContainingMass2Motif,
                     similarity_threshold,
@@ -70,32 +91,16 @@ def get_annotations(matching_spectra_selector: SelectSpectraContainingMass2Motif
 
         # Creates output file names
         base_file_name = os.path.join(output_directory, f"mass2motif_{mass2motif.motif_name}_min_{similarity_threshold}")
-        moss_input_file_name = return_non_existing_file_name(base_file_name + ".smiles")
-        moss_output_file_name = return_non_existing_file_name(base_file_name + ".sub")
 
-        create_moss_input_file(smiles_matching_mass2motif, smiles_not_matching_mass2motif, moss_input_file_name)
-        run_moss(moss_input_file_name,
-                 output_file_name=moss_output_file_name,
-                 minimal_support=minimal_relative_support,
-                 maximal_support_complement=maximal_relative_support_complement)
-        moss_results = load_moss_results(moss_output_file_name)
-        mass2motif.manual_annotation = Annotation(moss_results,
-                                                  similarity_threshold,
-                                                  minimal_relative_support,
-                                                  maximal_relative_support_complement)
+        annotation = get_moss_annotation(smiles_matching_mass2motif,
+                                         smiles_not_matching_mass2motif,
+                                         similarity_threshold,
+                                         minimal_relative_support,
+                                         maximal_relative_support_complement,
+                                         base_file_name)
+
+        mass2motif.manual_annotation = annotation
     # Deletes the temporary directory
     if temp_dir is not None:
         temp_dir.cleanup()
     return mass2motifs
-
-
-if __name__ == "__main__":
-    moss_input_file = os.path.join("../data/moss/example2.smiles")
-    moss_output_file = os.path.join("../data/moss/example2.sub")
-    with open(moss_input_file, "w") as file:
-        file.writelines(['0,0,CCC=O\n', '1,0,CCC\n', '2,1,CCCC\n', '3,1,CC\n'])
-    run_moss(moss_input_file, moss_output_file, 0, 100)
-
-    with open(moss_output_file, "r") as output:
-        result = output.readlines()
-        print(result)
