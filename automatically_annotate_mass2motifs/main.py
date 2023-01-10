@@ -29,6 +29,7 @@ def get_cleaned_and_binned_spectra(raw_library_spectra_file, bin_size):
 
     return binned_and_filtered_library_spectra
 
+
 def select_smiles_for_mass2motifs(raw_library_spectra_file,
                                   motif_set_name,
                                   bin_size,
@@ -52,7 +53,6 @@ def select_smiles_for_mass2motifs(raw_library_spectra_file,
 
     spectra_selector.create_all_moss_files(output_folder=moss_files_folder,
                                            minimal_score=minimal_mass2motif_matching_score)
-    # store_pickled_file(spectra_selector.scores_matrix, os.path.join(moss_files_folder, "mass2motif_scores_matrix_" +  motif_set_name + ".pickle"))
 
 
 def select_smiles_for_mass2motif_precalculated_scores(binned_and_filtered_library_spectra,
@@ -75,7 +75,7 @@ def select_smiles_for_mass2motif_precalculated_scores(binned_and_filtered_librar
                                                          mass2motifs,
                                                          scores_matrix=similarity_scores_matrix,
                                                          assert_correct_spectra=False)
-    print( "Loaded everything")
+    print("Loaded everything")
     spectra_selector.create_all_moss_files(output_folder=moss_files_folder,
                                            minimal_score=minimal_mass2motif_matching_score)
 
