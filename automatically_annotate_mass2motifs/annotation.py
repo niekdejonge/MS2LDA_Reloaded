@@ -2,7 +2,9 @@ from typing import List, Optional
 import re
 import pandas as pd
 import numpy as np
-
+from rdkit import Chem
+from rdkit.Chem import Draw
+from automatically_annotate_mass2motifs.utils import return_non_existing_file_name
 
 class Annotation:
     def __init__(self,
@@ -47,6 +49,16 @@ class Annotation:
         annotations = self.moss_annotations.__deepcopy__()
         class_dict["moss_annotations"] = annotations.to_dict()
         return class_dict
+
+    def visualize(self, file_name):
+        smiles = list(self.moss_annotations.index)
+        s_rels = list(self.moss_annotations["s_rel"])
+        legends = [f"{smiles[i]} \n\ns_rel: {s_rel}" for i, s_rel in enumerate(s_rels)]
+        file_name = return_non_existing_file_name(file_name)
+        mols = [Chem.MolFromSmiles(smile) for smile in smiles]
+        image = Draw.MolsToGridImage(mols, legends=legends)
+        image.save(file_name)
+
 
 def load_moss_results(file_name: str) -> Optional[pd.DataFrame]:
     """Loads in a moss results file and returns a pd.DataFrame"""
