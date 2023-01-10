@@ -30,7 +30,7 @@ class Mass2Motif:
         self.motif_name = motif_name
         self.motif_set_name = motif_set_name
         self.manual_annotation = manual_annotation
-        self.moss_annotations = []
+        self.moss_annotations: List[Annotation] = []
         self._assert_correct_types()
 
     def _assert_correct_types(self):
