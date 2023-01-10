@@ -68,7 +68,7 @@ class SelectSpectraContainingMass2Motif:
             spectra_per_mass2motif.append([self.spectra[i] for i in spectrum_indexes])
         return spectra_per_mass2motif
 
-    def select_non_matching_smiles(self,
+    def select_unique_matching_and_non_matching_smiles(self,
                                    matching_spectra: List[Spectrum]):
         """Selects all inchikeys not in smiles, and returns 1 smile for each
 
