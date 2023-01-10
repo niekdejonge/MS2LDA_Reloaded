@@ -28,7 +28,8 @@ def return_non_existing_file_name(file_name):
     new_file_name = f"{file_name_base}({i}){file_extension}"
     while os.path.exists(new_file_name):
         i += 1
-    print(f"File stored in {new_file_name}")
+        new_file_name = f"{file_name_base}({i}){file_extension}"
+    print(f"Instead the file will be stored in {new_file_name}")
     return new_file_name
 
 def convert_file_to_matchms_spectrum_objects(file_name,
