@@ -62,11 +62,11 @@ class Mass2Motif:
                     "loss_probabilities": self.losses.intensities})
 
     def to_dict(self) -> dict:
-        """Return a dictionary representation of a spectrum."""
-        class_dict = self.__dict__
+        """Return a dictionary representation of a spectrum, to make it possible to store as json"""
+        class_dict = self.__dict__.copy()
         class_dict["fragments"] = np.vstack((self.fragments.mz, self.fragments.intensities)).T.tolist()
         class_dict["losses"] = np.vstack((self.losses.mz, self.losses.intensities)).T.tolist()
-        # todo add Annotation.
+        class_dict["moss_annotations"] = [moss_annotation.to_dict() for moss_annotation in self.moss_annotations]
         return class_dict
 
     def __eq__(self, other):
