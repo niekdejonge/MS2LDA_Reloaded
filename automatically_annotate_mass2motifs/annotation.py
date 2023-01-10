@@ -39,11 +39,14 @@ class Annotation:
 
     def __str__(self):
         pd.set_option('display.precision', 1)
-        return self.moss_annotations[["description", "s_abs", "s_rel", "c_rel"]].head()
+        return str(self.moss_annotations.head())
 
     def to_dict(self):
         """Converts the object to a json storable format"""
-
+        class_dict = self.__dict__.copy()
+        annotations = self.moss_annotations.__deepcopy__()
+        class_dict["moss_annotations"] = annotations.to_dict()
+        return class_dict
 
 def load_moss_results(file_name: str) -> Optional[pd.DataFrame]:
     """Loads in a moss results file and returns a pd.DataFrame"""
@@ -69,13 +72,3 @@ def parse_moss_file_name(file_name):
     mass2motif_name = match.group(0)
     mass2motif_similarity_threshold = match.group(1)
     return mass2motif_name, mass2motif_similarity_threshold
-
-
-def create_annotations_from_annotations_file():
-    """Creates Annotations objects from a file"""
-    pass
-
-def save_annotations_in_file(annotations: List[Annotation],
-                             file_name) -> None:
-    """Saves multiple annotations in one file"""
-    pass
