@@ -34,6 +34,7 @@ def run_moss(smiles_file_name,
                     "moss.Miner",
                     f"-s{minimal_support}", f"-S{maximal_support_complement}", smiles_file_name, output_file_name])
 
+
 def get_moss_annotation(smiles_matching_mass2motif,
                         smiles_not_matching_mass2motif,
                         similarity_threshold,
@@ -56,11 +57,12 @@ def get_moss_annotation(smiles_matching_mass2motif,
                             maximal_relative_support_complement)
     return annotation
 
+
 def get_annotations(matching_spectra_selector: SelectSpectraContainingMass2Motif,
                     similarity_threshold,
                     minimal_relative_support,
                     maximal_relative_support_complement,
-                    output_directory = None) -> List[Mass2Motif]:
+                    output_directory=None) -> List[Mass2Motif]:
     """Creates a file containing the smiles matching and not matching a mass2motif readable by MOSS
 
     :param matching_spectra_selector:
@@ -86,12 +88,11 @@ def get_annotations(matching_spectra_selector: SelectSpectraContainingMass2Motif
     for i, mass2motif in enumerate(tqdm(mass2motifs,
                                         desc="Annotating mass2motifs")):
         list_of_matching_spectra = matrix_of_matching_spectra[i]
-        smiles_matching_mass2motif, smiles_not_matching_mass2motif = matching_spectra_selector.select_non_matching_smiles(
+        smiles_matching_mass2motif, smiles_not_matching_mass2motif = matching_spectra_selector.select_unique_matching_and_non_matching_smiles(
             list_of_matching_spectra)
 
         # Creates output file names
         base_file_name = os.path.join(output_directory, f"mass2motif_{mass2motif.motif_name}_min_{similarity_threshold}")
-
         annotation = get_moss_annotation(smiles_matching_mass2motif,
                                          smiles_not_matching_mass2motif,
                                          similarity_threshold,
