@@ -36,3 +36,22 @@ def test_create_annotation(tmp_path):
     assert list(result.columns) == ["s_abs", "c_abs", "s_rel", "c_rel", "diff_s_rel_and_c_rel"], \
         "different column names were expected"
     assert result.index.name == "smiles"
+
+
+def test_annotation_to_dict(tmp_path):
+    file_name = os.path.join(tmp_path, "moss_results")
+    generate_moss_results_file(file_name)
+    moss_annotations = load_moss_results(file_name)
+    annotation = Annotation(moss_annotations=moss_annotations,
+                            minimal_similarity=0.3,
+                            moss_minimal_relative_support=40.0,
+                            moss_maximal_relative_support_complement=70.0)
+    assert annotation.to_dict() == \
+           {'minimal_similarity': 0.3, 'moss_minimal_relative_support': 40.0,
+            'moss_maximal_relative_support_complement': 70.0,
+            'moss_annotations': {'s_abs': {'O(-C-C)-C(-C)-C-C': 6, 'O(-C-C)-C(-C)-C-C-C': 5},
+                                 'c_abs': {'O(-C-C)-C(-C)-C-C': 5737, 'O(-C-C)-C(-C)-C-C-C': 4266},
+                                 's_rel': {'O(-C-C)-C(-C)-C-C': 54.545456, 'O(-C-C)-C(-C)-C-C-C': 45.454544},
+                                 'c_rel': {'O(-C-C)-C(-C)-C-C': 28.162584, 'O(-C-C)-C(-C)-C-C-C': 20.941534},
+                                 'diff_s_rel_and_c_rel': {'O(-C-C)-C(-C)-C-C': 26.382872000000003,
+                                                          'O(-C-C)-C(-C)-C-C-C': 24.513009999999998}}}
