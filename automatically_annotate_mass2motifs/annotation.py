@@ -4,7 +4,8 @@ import pandas as pd
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import Draw
-from automatically_annotate_mass2motifs.utils import return_non_existing_file_name
+import matplotlib.pyplot as plt
+
 
 class Annotation:
     def __init__(self,
@@ -50,14 +51,25 @@ class Annotation:
         class_dict["moss_annotations"] = annotations.to_dict()
         return class_dict
 
-    def visualize(self, file_name):
-        smiles = list(self.moss_annotations.index)
-        s_rels = list(self.moss_annotations["s_rel"])
-        legends = [f"{smiles[i]} \n\ns_rel: {s_rel}" for i, s_rel in enumerate(s_rels)]
-        file_name = return_non_existing_file_name(file_name)
-        mols = [Chem.MolFromSmiles(smile) for smile in smiles]
-        image = Draw.MolsToGridImage(mols, legends=legends)
-        image.save(file_name)
+    def visualize(self):
+        smile_annotations = list(self.moss_annotations.index)
+        fig = plt.figure()
+        for i, smile in enumerate(smile_annotations):
+            mol = Chem.MolFromSmiles(smile)
+            ax = plt.subplot2grid((1,len(smile_annotations)), (0,i))
+            im = Draw.MolToImage(mol)
+            ax.imshow(im)
+            ax.axis("off")
+            ax.set_title(f"s_rel: {self.moss_annotations['s_rel'][smile]}\n"
+                         f"c_rel: {self.moss_annotations['s_rel'][smile]}\n"
+                         f"s_abs: {self.moss_annotations['s_abs'][smile]}\n"
+                         f"c_abs: {self.moss_annotations['c_abs'][smile]}\n",
+                         y=-0.5)
+        fig.suptitle(f"Minimal similarity: {self.minimal_similarity}\n"
+                     f"Min rel supp: {self.moss_minimal_relative_support}\n"
+                     f"Max rel supp complement: {self.moss_maximal_relative_support_complement}")
+        fig.tight_layout()
+        return fig
 
 
 def load_moss_results(file_name: str) -> Optional[pd.DataFrame]:
