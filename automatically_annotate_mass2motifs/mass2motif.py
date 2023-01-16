@@ -97,7 +97,6 @@ class Mass2Motif:
         self.moss_annotations.append(new_annotation)
 
     def visualize(self):
-        # fig, ax1 = plt.subplots(1, 1, figsize=(8,6), dpi=200)
         fig = plt.figure()
         dimensions = (1, 2)
         ax1 = plt.subplot2grid(dimensions, (0,0), colspan=1)
@@ -106,13 +105,10 @@ class Mass2Motif:
         if is_valid_smiles(self.manual_annotation):
             mol = Chem.MolFromSmiles(self.manual_annotation)
             image = Draw.MolToImage(mol, legend=str(self.manual_annotation))
-            # The first two numbers are used to position the molecule, the last two for the size of the molecule
             ax2 = plt.subplot2grid(dimensions, (0,1))
-            # ax2 = plt.axes([0.7, 0.65, 0.2, 0.2], frameon=True)
             ax2.imshow(image)
             ax2.axis("off")
         fig.show()
-
         for annotation in self.moss_annotations:
             fig = annotation.visualize()
             fig.show()
