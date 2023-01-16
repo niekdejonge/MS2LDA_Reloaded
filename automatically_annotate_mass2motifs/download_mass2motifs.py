@@ -2,6 +2,7 @@ import re
 from typing import List, Tuple
 import requests
 from math import gcd
+from tqdm import tqdm
 from functools import reduce
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
 
@@ -19,10 +20,11 @@ def download_motif_set_from_motifdb(motifset_name, bin_size) -> List[Mass2Motif]
 
     motif_set_id = motif_set_list[motifset_name]
     motif_set = requests.get(server_url + f"/get_motifset/{motif_set_id}", timeout=60).json()
-    motif_set_metadata= requests.get(server_url + f"/get_motifset_metadata/{motif_set_id}", timeout=60).json()
+    motif_set_metadata = requests.get(server_url + f"/get_motifset_metadata/{motif_set_id}", timeout=60).json()
 
     mass2motif_list = []
-    for motif_name in motif_set:
+    for motif_name in tqdm(motif_set,
+                           desc="Downloading Mass2motifs"):
         words = list(motif_set[motif_name].keys())
         probabilities = list(motif_set[motif_name].values())
         fragments, fragment_probabilities, losses, loss_probabilities = convert_words_to_peaks(words, probabilities)
