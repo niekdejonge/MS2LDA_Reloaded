@@ -8,6 +8,7 @@ from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
 
 
 class SelectSpectraContainingMass2Motif:
+    """Creates a similarity matrix between spectra and Mass2motifs"""
     def __init__(self,
                  binned_spectra: List[Spectrum],
                  mass2motifs: List[Mass2Motif],
