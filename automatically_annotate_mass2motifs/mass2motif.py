@@ -1,17 +1,11 @@
-import ast
 from typing import List, Optional, Union
 import numpy as np
 from matchms import Fragments
 import json
-from rdkit import Chem
-from rdkit.Chem import Draw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 
-from matchms.plotting.spectrum_plots import plot_spectra_mirror, plot_spectrum
-
-from automatically_annotate_mass2motifs.annotation import Annotation
-from automatically_annotate_mass2motifs.utils import return_non_existing_file_name
+from automatically_annotate_mass2motifs.annotation import Annotation, load_annotations_from_json
 
 
 class Mass2Motif:
@@ -27,7 +21,8 @@ class Mass2Motif:
                  bin_size: float,
                  motif_name: Optional[str] = None,
                  motif_set_name: Optional[str] = None,
-                 manual_annotation: Optional[str] = None):
+                 manual_annotation: Optional[str] = None,
+                 moss_annotations: Optional[List[Annotation]] = None):
         assert all(fragments[i] <= fragments[i+1] for i in range(len(fragments) - 1)), "Expected sorted fragments"
         assert all(losses[i] <= losses[i+1] for i in range(len(losses) - 1)), "Expected sorted losses"
 
@@ -38,7 +33,10 @@ class Mass2Motif:
         self.motif_name = motif_name
         self.motif_set_name = motif_set_name
         self.manual_annotation = manual_annotation
-        self.moss_annotations: List[Annotation] = []
+        if moss_annotations is None:
+            self.moss_annotations: List[Annotation] = []
+        else:
+            self.moss_annotations = moss_annotations
         self._assert_correct_types()
 
     def _assert_correct_types(self):
@@ -84,7 +82,19 @@ class Mass2Motif:
             self.bin_size == other.bin_size and \
             self.motif_name == other.motif_name and \
             self.motif_set_name == other.motif_set_name and \
-            self.manual_annotation == other.manual_annotation
+            self.manual_annotation == other.manual_annotation and \
+            self.moss_annotations == other.moss_annotations
+
+    def assert_equal(self, other: "Mass2Motif"):
+        assert isinstance(other, Mass2Motif)
+        assert self.fragments == other.fragments
+        assert self.losses == other.losses
+        assert self.bin_size == other.bin_size
+        assert self.motif_name == other.motif_name
+        assert self.motif_set_name == other.motif_set_name
+        assert self.manual_annotation == other.manual_annotation
+        for i, annotation in enumerate(self.moss_annotations):
+            annotation.assert_equal(other.moss_annotations[i])
 
     def add_moss_annotation(self, new_annotation: Annotation):
         assert isinstance(new_annotation, Annotation), "Expected type Annotation"
@@ -106,23 +116,26 @@ def save_mass2motifs_json(mass2motifs: Union[List[Mass2Motif], Mass2Motif],
         mass2motifs = [mass2motifs]
     json_str = []
     for mass2motif in mass2motifs:
-        json_str.append(json.dumps(mass2motif.to_dict()))
+        json_str.append(mass2motif.to_dict())
     with open(file_name, "w", encoding="utf-8") as file:
         json.dump(json_str, file, indent=3)
 
 
 def load_mass2motifs_json(file_name) -> List[Mass2Motif]:
-    with open(file_name, 'rb') as file:
+    with open(file_name, 'r') as file:
         mass2motifs = []
         for spectrum_dict in json.load(file):
-            spectrum_dict = ast.literal_eval(spectrum_dict)
-            mass2motifs.append(Mass2Motif(fragments=list(np.array(spectrum_dict["fragments"])[:, 0]),
-                                          fragment_probabilities=list(np.array(spectrum_dict["fragments"])[:, 1]),
-                                          losses=list(np.array(spectrum_dict["losses"])[:, 0]),
-                                          loss_probabilities=list(np.array(spectrum_dict["losses"])[:, 1]),
-                                          bin_size=spectrum_dict["bin_size"], motif_name=spectrum_dict["motif_name"],
-                                          motif_set_name=spectrum_dict["motif_set_name"],
-                                          manual_annotation=spectrum_dict["manual_annotation"]))
+            mass2motif = Mass2Motif(
+                fragments=list(np.array(spectrum_dict["fragments"])[:, 0]),
+                fragment_probabilities=list(np.array(spectrum_dict["fragments"])[:, 1]),
+                losses=list(np.array(spectrum_dict["losses"])[:, 0]),
+                loss_probabilities=list(np.array(spectrum_dict["losses"])[:, 1]),
+                bin_size=spectrum_dict["bin_size"], motif_name=spectrum_dict["motif_name"],
+                motif_set_name=spectrum_dict["motif_set_name"],
+                manual_annotation=spectrum_dict["manual_annotation"],
+                moss_annotations=load_annotations_from_json(spectrum_dict["moss_annotations"])
+            )
+            mass2motifs.append(mass2motif)
     return mass2motifs
 
 
