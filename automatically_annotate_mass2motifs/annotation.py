@@ -1,6 +1,5 @@
-from typing import List, Optional
-import re
 import pandas as pd
+from typing import List, Optional
 import numpy as np
 from matchms.metadata_utils import is_valid_smiles
 from rdkit import Chem
@@ -24,26 +23,29 @@ class Annotation:
 
         self.moss_annotations = moss_annotations
         self.assert_correct_moss_annotations()
-        self.reformat_moss_annotations()
+        # sort the annotations
+        self.moss_annotations.sort_values("diff_s_rel_and_c_rel", inplace=True, ascending=False)
         self.nr_of_matching_spectra = nr_of_spectra_matching_mass2motif
         self.nr_of_not_matching_spectra = nr_of_spectra_not_matching_mass2motif
 
-    def reformat_moss_annotations(self):
-        # rename columns to new names
-        self.moss_annotations.rename(columns={"description": "smiles"}, inplace=True)
-        self.moss_annotations.set_index("smiles", inplace=True)
-        self.moss_annotations["diff_s_rel_and_c_rel"] = self.moss_annotations["s_rel"] - self.moss_annotations["c_rel"]
-        self.moss_annotations.sort_values("diffs_s_rel_and_c_rel", inplace=True, ascending=False)
-        self.moss_annotations = self.moss_annotations[["s_abs", "c_abs", "s_rel", "c_rel", "diff_s_rel_and_c_rel"]]
 
     def assert_correct_moss_annotations(self):
         assert isinstance(self.moss_annotations, pd.DataFrame)
-        assert list(self.moss_annotations.columns) == ["id", "description", "nodes", "edges", "s_abs", "s_rel", "c_abs", "c_rel"], \
-            "Expected different moss_annotations, use load_moss_reulsts to load the results from a file"
+        assert list(self.moss_annotations.columns) == ["s_abs", "c_abs", "s_rel", "c_rel", "diff_s_rel_and_c_rel"], \
+            "Expected different moss_annotations, use load_moss_results to load the results from a file"
         assert np.all(self.moss_annotations["s_rel"] >= self.moss_minimal_relative_support), \
             "moss minimal relative support given is wrong, since a lower s_rel was found"
         assert np.all(self.moss_annotations["c_rel"] <= self.moss_maximal_relative_support_complement),\
             "moss maximal relative support complement given is wrong, since a higher c_rel was found"
+
+    def assert_equal(self, other):
+        assert isinstance(other, Annotation)
+        assert self.minimal_similarity == other.minimal_similarity
+        assert self.moss_minimal_relative_support == other.moss_minimal_relative_support
+        assert self.moss_maximal_relative_support_complement == other.moss_maximal_relative_support_complement
+        pd.testing.assert_frame_equal(self.moss_annotations, other.moss_annotations)
+        assert self.nr_of_matching_spectra == other.nr_of_matching_spectra
+        assert self.nr_of_not_matching_spectra == other.nr_of_not_matching_spectra
 
     def __str__(self):
         pd.set_option('display.precision', 1)
@@ -84,6 +86,22 @@ class Annotation:
         fig.tight_layout()
         return fig
 
+def load_annotations_from_json(dictionaries_from_json: List[dict])-> List[Annotation]:
+    annotations = []
+    for annotation_dict in dictionaries_from_json:
+        dataframe_with_annotations = pd.DataFrame.from_dict(annotation_dict["moss_annotations"])
+        dataframe_with_annotations.index.name="smiles"
+        annotation = Annotation(
+            moss_annotations=dataframe_with_annotations,
+            minimal_similarity=annotation_dict["minimal_similarity"],
+            moss_minimal_relative_support=annotation_dict["moss_minimal_relative_support"],
+            moss_maximal_relative_support_complement=annotation_dict["moss_maximal_relative_support_complement"],
+            nr_of_spectra_matching_mass2motif=annotation_dict["nr_of_matching_spectra"],
+            nr_of_spectra_not_matching_mass2motif=annotation_dict["nr_of_not_matching_spectra"]
+        )
+        annotations.append(annotation)
+    return annotations
+
 
 def load_moss_results(file_name: str) -> Optional[pd.DataFrame]:
     """Loads in a moss results file and returns a pd.DataFrame"""
@@ -97,15 +115,11 @@ def load_moss_results(file_name: str) -> Optional[pd.DataFrame]:
 
     with open(file_name, "r") as file:
         moss_results = pd.read_csv(file)
+    assert isinstance(moss_results, pd.DataFrame)
+    assert list(moss_results.columns) == ["id", "description", "nodes", "edges", "s_abs", "s_rel", "c_abs", "c_rel"], \
+        "Expected different moss_annotations, use load_moss_results to load the results from a file"
+    moss_results.rename(columns={"description": "smiles"}, inplace=True)
+    moss_results.set_index("smiles", inplace=True)
+    moss_results["diff_s_rel_and_c_rel"] = moss_results["s_rel"] - moss_results["c_rel"]
+    moss_results = moss_results[["s_abs", "c_abs", "s_rel", "c_rel", "diff_s_rel_and_c_rel"]]
     return moss_results
-
-
-def parse_moss_file_name(file_name):
-    """Parses the file name of a moss file"""
-
-    match = re.match(r"\Amass2motif_(.*)_min_(.*).sub\Z", file_name)
-    if match is None:
-        return None
-    mass2motif_name = match.group(0)
-    mass2motif_similarity_threshold = match.group(1)
-    return mass2motif_name, mass2motif_similarity_threshold
