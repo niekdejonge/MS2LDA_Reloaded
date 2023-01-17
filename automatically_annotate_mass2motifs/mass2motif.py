@@ -2,7 +2,6 @@ import ast
 from typing import List, Optional, Union
 import numpy as np
 from matchms import Fragments
-from matchms.metadata_utils import is_valid_smiles
 import json
 from rdkit import Chem
 from rdkit.Chem import Draw
@@ -98,21 +97,8 @@ class Mass2Motif:
 
     def visualize(self):
         fig = plt.figure()
-        dimensions = (1, 2)
-        ax1 = plt.subplot2grid(dimensions, (0,0), colspan=1)
-        plot_mass2motif(self, ax1)
-        # visualize manual annotation
-        if is_valid_smiles(self.manual_annotation):
-            mol = Chem.MolFromSmiles(self.manual_annotation)
-            image = Draw.MolToImage(mol, legend=str(self.manual_annotation))
-            ax2 = plt.subplot2grid(dimensions, (0,1))
-            ax2.imshow(image)
-            ax2.axis("off")
-        fig.show()
-        for annotation in self.moss_annotations:
-            fig = annotation.visualize()
-            fig.show()
-
+        plot_mass2motif(self)
+        return fig
 
 def save_mass2motifs_json(mass2motifs: Union[List[Mass2Motif], Mass2Motif],
                           file_name):
@@ -167,21 +153,20 @@ def plot_mass2motif(mass2motif: Mass2Motif,
     ax.set_ylim(-1, 1)
 
     ax.axhline(0, color="#9E9E9E", zorder=10)
-
-    # Update axes so that both spectra fit.
-    min_mz = max(
-        [
-            0,
-            np.floor(mass2motif.fragments.mz[0] / 100 - 1) * 100,
-            np.floor(mass2motif.losses.mz[0] / 100 - 1) * 100,
-        ]
-    )
-    max_mz = max(
-        [
-            np.ceil(mass2motif.fragments.mz[-1] / 100 + 1) * 100,
-            np.ceil(mass2motif.losses.mz[-1] / 100 + 1) * 100,
-        ]
-    )
+    if len(mass2motif.losses.mz) != 0 and len(mass2motif.fragments.mz) != 0:
+        # Update axes so that both spectra fit.
+        min_mz = max([0, np.floor(mass2motif.fragments.mz[0] / 100 - 1) * 100,
+                      np.floor(mass2motif.losses.mz[0] / 100 - 1) * 100,])
+        max_mz = max([np.ceil(mass2motif.fragments.mz[-1] / 100 + 1) * 100,
+                      np.ceil(mass2motif.losses.mz[-1] / 100 + 1) * 100,])
+    elif len(mass2motif.fragments.mz) != 0:
+        min_mz = max(0, np.floor(mass2motif.fragments.mz[0] / 100 - 1) * 100)
+        max_mz = np.ceil(mass2motif.fragments.mz[-1] / 100 + 1) * 100
+    elif len(mass2motif.losses.mz) != 0:
+        min_mz = max(0, np.floor(mass2motif.losses.mz[0] / 100 - 1) * 100)
+        max_mz = np.ceil(mass2motif.losses.mz[-1] / 100 + 1) * 100
+    else:
+        assert False, "A Mass2motif needs to have at least one fragment or loss"
     ax.set_xlim(min_mz, max_mz)
     # makes sure the positive and negative axis are plotted correctly
     ax.yaxis.set_major_locator(mticker.AutoLocator())
@@ -196,14 +181,14 @@ def plot_mass2motif(mass2motif: Mass2Motif,
     x_text = 0.04 * (max_mz - min_mz)
     ax.text(x_text, 1, name1, ha="left", va="top", zorder=2, backgroundcolor="white")
     ax.text(x_text, -1, name2, ha="left", va="bottom", zorder=2, backgroundcolor="white")
-    ax.set_title(f"Mass2Motif {mass2motif.motif_name}")
+    ax.set_title(f"Mass2Motif: {mass2motif.manual_annotation}")
     return ax
 
 
 def plot_fragments(fragments: Fragments,
                    mirror_intensity=False,
                    ax=None,
-                   grid = True,
+                   grid=True,
                    peak_color="teal") -> plt.Axes:
     """
     Plots fragments
@@ -211,9 +196,6 @@ def plot_fragments(fragments: Fragments,
     # pylint: disable=too-many-locals, too-many-arguments
     if ax is None:
         ax = plt.gca()
-
-    min_mz = max(0, np.floor(fragments.mz[0] / 100 - 1) * 100)
-    max_mz = np.ceil(fragments.mz[-1] / 100 + 1) * 100
 
     def make_stems():
         """calculate where the stems of the spectrum peaks are going to be"""
@@ -229,7 +211,6 @@ def plot_fragments(fragments: Fragments,
         y = -y
     ax.plot(x, y, color=peak_color, linewidth=1.0, marker="", zorder=5)
 
-    ax.set_xlim(min_mz, max_mz)
     y_max = 1.10
     ax.set_ylim(*(0, y_max) if not mirror_intensity else (-y_max, 0))
 
