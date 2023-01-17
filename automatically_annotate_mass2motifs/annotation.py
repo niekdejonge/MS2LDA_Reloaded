@@ -2,6 +2,7 @@ from typing import List, Optional
 import re
 import pandas as pd
 import numpy as np
+from matchms.metadata_utils import is_valid_smiles
 from rdkit import Chem
 from rdkit.Chem import Draw
 import matplotlib.pyplot as plt
@@ -12,7 +13,9 @@ class Annotation:
                  moss_annotations: pd.DataFrame,
                  minimal_similarity: float,
                  moss_minimal_relative_support: float,
-                 moss_maximal_relative_support_complement: float):
+                 moss_maximal_relative_support_complement: float,
+                 nr_of_spectra_matching_mass2motif: int,
+                 nr_of_spectra_not_matching_mass2motif: int):
 
         # Settings
         self.minimal_similarity = minimal_similarity
@@ -22,13 +25,15 @@ class Annotation:
         self.moss_annotations = moss_annotations
         self.assert_correct_moss_annotations()
         self.reformat_moss_annotations()
+        self.nr_of_matching_spectra = nr_of_spectra_matching_mass2motif
+        self.nr_of_not_matching_spectra = nr_of_spectra_not_matching_mass2motif
 
     def reformat_moss_annotations(self):
         # rename columns to new names
         self.moss_annotations.rename(columns={"description": "smiles"}, inplace=True)
         self.moss_annotations.set_index("smiles", inplace=True)
         self.moss_annotations["diff_s_rel_and_c_rel"] = self.moss_annotations["s_rel"] - self.moss_annotations["c_rel"]
-        self.moss_annotations.sort_values("diff_s_rel_and_c_rel", inplace=True, ascending=False)
+        self.moss_annotations.sort_values("diffs_s_rel_and_c_rel", inplace=True, ascending=False)
         self.moss_annotations = self.moss_annotations[["s_abs", "c_abs", "s_rel", "c_rel", "diff_s_rel_and_c_rel"]]
 
     def assert_correct_moss_annotations(self):
@@ -51,23 +56,31 @@ class Annotation:
         class_dict["moss_annotations"] = annotations.to_dict()
         return class_dict
 
-    def visualize(self):
-        smile_annotations = list(self.moss_annotations.index)
-        fig = plt.figure()
+    def visualize(self, nr_to_visualize):
+        if nr_to_visualize > len(self.moss_annotations.index):
+            smile_annotations = list(self.moss_annotations.index)
+        else:
+            smile_annotations = list(self.moss_annotations.index)[:nr_to_visualize]
+        nr_of_colums = 3
+        nr_of_rows = (len(smile_annotations)-1)//nr_of_colums+1
+        fig = plt.figure(figsize=(5 * nr_of_colums, 5 * nr_of_rows))
         for i, smile in enumerate(smile_annotations):
-            mol = Chem.MolFromSmiles(smile)
-            ax = plt.subplot2grid((1,len(smile_annotations)), (0,i))
-            im = Draw.MolToImage(mol)
-            ax.imshow(im)
+            ax = fig.add_subplot(nr_of_rows, nr_of_colums, i + 1)
+            if is_valid_smiles(smile):
+                mol = Chem.MolFromSmiles(smile)
+                im = Draw.MolToImage(mol)
+                ax.imshow(im)
             ax.axis("off")
             ax.set_title(f"s_rel: {self.moss_annotations['s_rel'][smile]}\n"
-                         f"c_rel: {self.moss_annotations['s_rel'][smile]}\n"
-                         f"s_abs: {self.moss_annotations['s_abs'][smile]}\n"
-                         f"c_abs: {self.moss_annotations['c_abs'][smile]}\n",
-                         y=-0.5)
+                         f"c_rel: {self.moss_annotations['c_rel'][smile]}\n"
+                         f"Smile: {smile}"
+                         # f"s_abs: {self.moss_annotations['s_abs'][smile]}\n"
+                         # f"c_abs: {self.moss_annotations['c_abs'][smile]}\n"
+                         ,
+                         )
         fig.suptitle(f"Minimal similarity: {self.minimal_similarity}\n"
-                     f"Min rel supp: {self.moss_minimal_relative_support}\n"
-                     f"Max rel supp complement: {self.moss_maximal_relative_support_complement}")
+                     f"Matching spectra: {self.nr_of_matching_spectra}\n"
+                     f"Not matching spectra: {self.nr_of_not_matching_spectra}")
         fig.tight_layout()
         return fig
 
