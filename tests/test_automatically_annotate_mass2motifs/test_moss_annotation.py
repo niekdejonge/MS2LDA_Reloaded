@@ -1,12 +1,15 @@
 import os
+from typing import List
 import pandas as pd
 from matchms import Fragments, Spectrum
 import numpy as np
-from automatically_annotate_mass2motifs.search_matching_spectra_for_mass2motif import (overlap_in_fragments,
-                                                                                       SelectSpectraContainingMass2Motif,                                                                                       similarity_mass2motif_and_spectrum)
+from automatically_annotate_mass2motifs.search_matching_spectra_for_mass2motif import \
+    (overlap_in_fragments, ScoresMatrix, similarity_mass2motif_and_spectrum, create_similarity_matrix)
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
 from tests.test_automatically_annotate_mass2motifs.generate_test_data import binned_spectra_005
-from automatically_annotate_mass2motifs.moss_annotation import create_moss_input_file, run_moss, get_annotations
+from automatically_annotate_mass2motifs.moss_annotation import (create_moss_input_file, run_moss,
+                                                                run_moss_wrapper, get_moss_annotation)
+from automatically_annotate_mass2motifs.annotation import Annotation
 
 
 def test_create_moss_input_file(tmp_path):
@@ -19,6 +22,7 @@ def test_create_moss_input_file(tmp_path):
         result = file.readlines()
         assert result == ['0,0,CCC=O\n', '1,0,CCC\n', '2,1,CCCC\n', '3,1,CC\n'], \
             "expected a different output file"
+
 
 def test_run_moss(tmp_path):
     moss_input_file = os.path.join(tmp_path, 'moss_input_file.smiles')
@@ -34,53 +38,34 @@ def test_run_moss(tmp_path):
                           '1,O=C-C-C,4,3,1,50.0,0,0.0\n',
                           '2,C(-C)-C,3,2,2,100.0,1,50.0\n']
 
+def test_run_moss_wrapper(tmp_path):
+    result = run_moss_wrapper(smiles_matching_mass2motif=["CCC=O", "CCC"],
+                              smiles_not_matching_mass2motif=["CCCC", "CC"],
+                              minimal_relative_support=30,
+                              maximal_relative_support_complement=100)
+    expected_result = pd.DataFrame([[1, 0 ,50.0, 0.0, 50.0],
+                                    [2, 1, 100.0, 50.0, 50.0]],
+                                   index=["O=C-C-C", "C(-C)-C"],
+                                   columns=["s_abs", "c_abs", "s_rel", "c_rel", "diff_s_rel_and_c_rel"])
+    expected_result.index.name = "smiles"
+    pd.testing.assert_frame_equal(expected_result, result)
 
-def test_select_matching_smiles():
+def test_add_moss_annotations():
     spectra = binned_spectra_005()
-    mass2motifs = [Mass2Motif(fragments=[100.025], fragment_probabilities= [0.5],
+    mass2motif = Mass2Motif(fragments=[100.025], fragment_probabilities= [0.5],
                             losses=[128.075, 200.725], loss_probabilities=[0.1, 0.25],
-                            bin_size=0.05),
-                   Mass2Motif(fragments=[50.025], fragment_probabilities=[0.6],
-                              losses=[80.025, 128.075], loss_probabilities=[0.5, 0.1],
-                              bin_size=0.05)]
-    spectrum_selector = SelectSpectraContainingMass2Motif(spectra, mass2motifs)
-    expected_result = pd.DataFrame([[0.55, 0.05],
-                                    [0.00, 0.60]])
-    assert np.all(expected_result == spectrum_selector.scores_matrix), "Expected different scores matrix"
-    spectra_per_mass2motif = spectrum_selector.select_matching_spectra(0.05)
-    expected_spectra_per_mass2motif = [[spectra[0], spectra[1]], [spectra[1]]]
-    assert np.all(spectra_per_mass2motif == expected_spectra_per_mass2motif), "Different spectra were expected"
-    smiles_matching, smiles_not_matching = spectrum_selector.select_unique_matching_and_non_matching_smiles(
-        spectra_per_mass2motif[0])
-    assert set(smiles_matching) == {'CN=C=O', 'C1CCCCC1'}
-    assert smiles_not_matching == []
-    smiles_matching, smiles_not_matching = spectrum_selector.select_unique_matching_and_non_matching_smiles(
-        spectra_per_mass2motif[1])
-    assert smiles_matching == ["C1CCCCC1"]
-    assert smiles_not_matching == ["CN=C=O"]
+                            bin_size=0.05)
+    scores_matrix = create_similarity_matrix([mass2motif], spectra)
+    spectrum_selector = ScoresMatrix(spectra, scores_matrix)
+    annotation = get_moss_annotation(mass2motif, spectrum_selector, 0.05, 10, 80)
+    assert isinstance(annotation, Annotation)
+    expected_result = pd.DataFrame([[2, 0 ,100.0, 0.0, 100.0],
+                                    [1, 0, 50.0, 0.0, 50.0],
+                                    [1, 0, 50.0, 0.0, 50.0]],
+                                   index=["C", "O=C=N-C", "C1-C-C-C-C-C-1"],
+                                   columns=["s_abs", "c_abs", "s_rel", "c_rel", "diff_s_rel_and_c_rel"])
+    expected_result.index.name = "smiles"
+    pd.testing.assert_frame_equal(expected_result, annotation.moss_annotations)
 
-
-def test_get_annotations():
-    spectra = binned_spectra_005()
-    mass2motifs = [Mass2Motif(fragments=[100.025], fragment_probabilities= [0.5],
-                              losses=[128.075, 200.725], loss_probabilities=[0.1, 0.25],
-                              bin_size=0.05),
-                   Mass2Motif(fragments=[50.025], fragment_probabilities=[0.6],
-                              losses=[80.025, 128.075], loss_probabilities=[0.5, 0.1],
-                              bin_size=0.05)]
-    spectrum_selector = SelectSpectraContainingMass2Motif(spectra, mass2motifs)
-    annotated_mass2motifs = get_annotations(spectrum_selector,
-                                            0.05, 0.1, 0.8)
-    assert annotated_mass2motifs == mass2motifs # This does currently not check if the added moss annotations actually match
-    assert len(annotated_mass2motifs[0].moss_annotations) == 1, "Expected only one annotation to be added"
-    annotation1 = annotated_mass2motifs[0].moss_annotations[0]
-    assert annotation1.minimal_similarity == 0.05
-    assert annotation1.moss_minimal_relative_support == 0.1
-    assert annotation1.moss_maximal_relative_support_complement == 0.8
-
-    assert annotation1.moss_annotations.to_dict() == \
-           {'s_abs': {'C': 2, 'O=C=N-C': 1, 'C1-C-C-C-C-C-1': 1},
-            'c_abs': {'C': 0, 'O=C=N-C': 0, 'C1-C-C-C-C-C-1': 0},
-            's_rel': {'C': 100.0, 'O=C=N-C': 50.0, 'C1-C-C-C-C-C-1': 50.0},
-            'c_rel': {'C': 0.0, 'O=C=N-C': 0.0, 'C1-C-C-C-C-C-1': 0.0},
-            'diff_s_rel_and_c_rel': {'C': 100.0, 'O=C=N-C': 50.0, 'C1-C-C-C-C-C-1': 50.0}}
+if __name__ == "__main__":
+    pass

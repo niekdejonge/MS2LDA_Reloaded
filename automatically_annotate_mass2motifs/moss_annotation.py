@@ -1,13 +1,13 @@
 import os
 import tempfile
 from matchms import Spectrum
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import numpy as np
 import pandas as pd
 import subprocess
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
 from automatically_annotate_mass2motifs.search_matching_spectra_for_mass2motif import ScoresMatrix
-from automatically_annotate_mass2motifs.annotation import Annotation, load_moss_results
+from automatically_annotate_mass2motifs.annotation import Annotation
 
 
 def create_moss_input_file(smiles_matching_mass2motif: List[str],
@@ -59,32 +59,31 @@ def run_moss_wrapper(smiles_matching_mass2motif: List[str],
         temp_dir.cleanup()
     return moss_results
 
-def add_moss_annotation(mass2motif: Mass2Motif,
+def get_moss_annotation(mass2motif: Mass2Motif,
                         scores_matrix: ScoresMatrix,
                         similarity_threshold: float,
                         minimal_relative_support: int,
-                        maximal_relative_support_complement: int) -> Mass2Motif:
+                        maximal_relative_support_complement: int) -> Optional[Annotation]:
     """A wrapper to add a moss annotation to a Mass2Motif"""
     # Selects the spectra that match with the mass2motif
     matching_spectra, not_matching_spectra = scores_matrix.select_matching_spectra(similarity_threshold,
                                                                                    mass2motif)
     if len(matching_spectra) == 0:
-        return mass2motif
+        return None
     smiles_matching_mass2motif, smiles_not_matching_mass2motif = select_unique_matching_and_non_matching_smiles(
         matching_spectra, not_matching_spectra)
 
     moss_results = run_moss_wrapper(smiles_matching_mass2motif, smiles_not_matching_mass2motif,
                                     minimal_relative_support, maximal_relative_support_complement)
     if moss_results is None:
-        return mass2motif
-    mass2motif.add_moss_annotation(
-        Annotation(moss_results,
-                   similarity_threshold,
-                   minimal_relative_support,
-                   maximal_relative_support_complement,
-                   len(smiles_matching_mass2motif),
-                   len(smiles_not_matching_mass2motif)))
-    return mass2motif
+        return None
+
+    return Annotation(moss_results,
+                      similarity_threshold,
+                      minimal_relative_support,
+                      maximal_relative_support_complement,
+                      len(smiles_matching_mass2motif),
+                      len(smiles_not_matching_mass2motif))
 
 def get_multiple_moss_annotations(mass2motif: Mass2Motif,
                                   scores_matrix: ScoresMatrix,
@@ -92,11 +91,9 @@ def get_multiple_moss_annotations(mass2motif: Mass2Motif,
                                   minimal_relative_support: int,
                                   maximal_relative_support_complement: int):
     for similarity_threshold in similarity_thresholds:
-        mass2motif = add_moss_annotation(mass2motif,
-                                         scores_matrix,
-                                         similarity_threshold,
-                                         minimal_relative_support,
+        annotation = get_moss_annotation(mass2motif, scores_matrix, similarity_threshold, minimal_relative_support,
                                          maximal_relative_support_complement)
+        mass2motif.add_moss_annotation(annotation)
     return mass2motif
 
 
@@ -128,3 +125,25 @@ def create_inchikeys_smiles_dict(spectra):
         if inchikey not in inchikey_dict:
             inchikey_dict[inchikey] = spectrum.get("smiles")
     return inchikey_dict
+
+
+def load_moss_results(file_name: str) -> Optional[pd.DataFrame]:
+    """Loads in a moss results file and returns a pd.DataFrame"""
+    with open(file_name, "r") as file:
+        lines = file.readlines()
+        if len(lines) == 0:
+            # Moss returns an empty dataframe, when no annotations are found.
+            return None
+        assert lines[0] == "id,description,nodes,edges,s_abs,s_rel,c_abs,c_rel\n", \
+            "Expected the header id,description,nodes,edges,s_abs,s_rel,c_abs,c_rel in a moss output file"
+
+    with open(file_name, "r") as file:
+        moss_results = pd.read_csv(file)
+    assert isinstance(moss_results, pd.DataFrame)
+    assert list(moss_results.columns) == ["id", "description", "nodes", "edges", "s_abs", "s_rel", "c_abs", "c_rel"], \
+        "Expected different moss_annotations, use load_moss_results to load the results from a file"
+    moss_results.rename(columns={"description": "smiles"}, inplace=True)
+    moss_results.set_index("smiles", inplace=True)
+    moss_results["diff_s_rel_and_c_rel"] = moss_results["s_rel"] - moss_results["c_rel"]
+    moss_results = moss_results[["s_abs", "c_abs", "s_rel", "c_rel", "diff_s_rel_and_c_rel"]]
+    return moss_results

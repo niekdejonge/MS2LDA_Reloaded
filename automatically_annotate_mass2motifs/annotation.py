@@ -20,7 +20,6 @@ class Annotation:
         self.minimal_similarity = minimal_similarity
         self.moss_minimal_relative_support = moss_minimal_relative_support
         self.moss_maximal_relative_support_complement = moss_maximal_relative_support_complement
-
         self.moss_annotations = moss_annotations
         self.assert_correct_moss_annotations()
         # sort the annotations
@@ -101,25 +100,3 @@ def load_annotations_from_json(dictionaries_from_json: List[dict])-> List[Annota
         )
         annotations.append(annotation)
     return annotations
-
-
-def load_moss_results(file_name: str) -> Optional[pd.DataFrame]:
-    """Loads in a moss results file and returns a pd.DataFrame"""
-    with open(file_name, "r") as file:
-        lines = file.readlines()
-        if len(lines) == 0:
-            # Moss returns an empty dataframe, when no annotations are found.
-            return None
-        assert lines[0] == "id,description,nodes,edges,s_abs,s_rel,c_abs,c_rel\n", \
-            "Expected the header id,description,nodes,edges,s_abs,s_rel,c_abs,c_rel in a moss output file"
-
-    with open(file_name, "r") as file:
-        moss_results = pd.read_csv(file)
-    assert isinstance(moss_results, pd.DataFrame)
-    assert list(moss_results.columns) == ["id", "description", "nodes", "edges", "s_abs", "s_rel", "c_abs", "c_rel"], \
-        "Expected different moss_annotations, use load_moss_results to load the results from a file"
-    moss_results.rename(columns={"description": "smiles"}, inplace=True)
-    moss_results.set_index("smiles", inplace=True)
-    moss_results["diff_s_rel_and_c_rel"] = moss_results["s_rel"] - moss_results["c_rel"]
-    moss_results = moss_results[["s_abs", "c_abs", "s_rel", "c_rel", "diff_s_rel_and_c_rel"]]
-    return moss_results
