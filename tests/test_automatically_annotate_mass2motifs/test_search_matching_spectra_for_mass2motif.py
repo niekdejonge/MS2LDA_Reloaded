@@ -2,8 +2,9 @@ import pandas as pd
 from matchms import Fragments, Spectrum
 import numpy as np
 from automatically_annotate_mass2motifs.search_matching_spectra_for_mass2motif import (overlap_in_fragments,
-                                                                                       SelectSpectraContainingMass2Motif,
-                                                                                       similarity_mass2motif_and_spectrum)
+                                                                                       ScoresMatrix,
+                                                                                       similarity_mass2motif_and_spectrum,
+                                                                                       create_similarity_matrix)
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
 from tests.test_automatically_annotate_mass2motifs.generate_test_data import binned_spectra_005
 
@@ -32,26 +33,51 @@ def test_similarity_mass2motif_and_spectrum():
     assert score == 0.5
 
 
-def test_select_spectra_matching_mass2motif(tmp_path):
+def test_generate_similarity_matrix():
     spectra = binned_spectra_005()
     mass2motifs = [Mass2Motif(fragments=[100.025], fragment_probabilities= [0.5],
                             losses=[128.075, 200.725], loss_probabilities=[0.1, 0.25],
-                            bin_size=0.05),
+                              motif_name="motif_1", motif_set_name="motif_set_1", bin_size=0.05),
                    Mass2Motif(fragments=[50.025], fragment_probabilities=[0.6],
                               losses=[80.025, 128.075], loss_probabilities=[0.5, 0.1],
-                              bin_size=0.05)]
-    spectra_containing_mass2motif = SelectSpectraContainingMass2Motif(spectra, mass2motifs)
-    expected_result = pd.DataFrame([[0.55, 0.05],
-                                    [0.00, 0.60]])
-    assert np.all(expected_result == spectra_containing_mass2motif.scores_matrix), "Expected different scores matrix"
-    spectra_per_mass2motif = spectra_containing_mass2motif.select_matching_spectra(0.05)
-    expected_spectra_per_mass2motif = [[spectra[0], spectra[1]], [spectra[1]]]
-    assert np.all(spectra_per_mass2motif == expected_spectra_per_mass2motif), "Different spectra were expected"
-    smiles_matching, smiles_not_matching = spectra_containing_mass2motif.select_unique_matching_and_non_matching_smiles(
-        spectra_per_mass2motif[0])
-    assert set(smiles_matching) == {'CN=C=O', 'C1CCCCC1'}
-    assert smiles_not_matching == []
-    smiles_matching, smiles_not_matching = spectra_containing_mass2motif.select_unique_matching_and_non_matching_smiles(
-        spectra_per_mass2motif[1])
-    assert smiles_matching == ["C1CCCCC1"]
-    assert smiles_not_matching == ["CN=C=O"]
+                              motif_name="motif_2", motif_set_name="motif_set_1",
+                              bin_size=0.05),
+                   Mass2Motif(fragments=[50.025], fragment_probabilities=[0.6],
+                              losses=[80.025, 128.075], loss_probabilities=[0.5, 0.1],
+                              motif_name="motif_3", motif_set_name="motif_set_1",
+                              bin_size=0.05)
+                   ]
+    similarity_matrix = create_similarity_matrix(mass2motifs, spectra)
+    expected_result = pd.DataFrame([[0.55, 0.05],[0.00, 0.60],[0.00, 0.60]],
+                                   index=["motif_set_1 motif_1", "motif_set_1 motif_2", "motif_set_1 motif_3"],
+                                   columns=["ABCDEFGHIJKLAQ", "BBBBBBBBBBBBBB"])
+    pd.testing.assert_frame_equal(expected_result, similarity_matrix)
+
+
+def test_select_matching_spectra():
+    spectra = binned_spectra_005()
+    mass2motifs = [Mass2Motif(fragments=[100.025], fragment_probabilities= [0.5],
+                            losses=[128.075, 200.725], loss_probabilities=[0.1, 0.25],
+                              motif_name="motif_1", motif_set_name="motif_set_1", bin_size=0.05),
+                   Mass2Motif(fragments=[50.025], fragment_probabilities=[0.6],
+                              losses=[80.025, 128.075], loss_probabilities=[0.5, 0.1],
+                              motif_name="motif_2", motif_set_name="motif_set_1",
+                              bin_size=0.05),
+                   Mass2Motif(fragments=[50.025], fragment_probabilities=[0.6],
+                              losses=[80.025, 128.075], loss_probabilities=[0.5, 0.1],
+                              motif_name="motif_3", motif_set_name="motif_set_1",
+                              bin_size=0.05)
+                   ]
+    similarity_matrix = pd.DataFrame([[0.55, 0.05],[0.00, 0.60],[0.00, 0.60]],
+                                     index=["motif_set_1 motif_1", "motif_set_1 motif_2", "motif_set_1 motif_3"],
+                                     columns=["ABCDEFGHIJKLAQ", "BBBBBBBBBBBBBB"])
+    scores_matrix = ScoresMatrix(spectra, similarity_matrix)
+    result = scores_matrix.select_matching_spectra(0.6, mass2motifs[0])
+    assert result[0] == [] and result[1] == spectra
+    result = scores_matrix.select_matching_spectra(0.6, mass2motifs[1])
+    assert result[0] == [spectra[1],] and result[1] == [spectra[0],]
+    result = scores_matrix.select_matching_spectra(0, mass2motifs[0])
+    assert result[0] == spectra and result[1] == []
+
+if __name__ == "__main__":
+    pass

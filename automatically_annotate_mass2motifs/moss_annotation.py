@@ -1,19 +1,19 @@
 import os
 import tempfile
-from typing import List
+from matchms import Spectrum
+from typing import List, Tuple
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 import subprocess
-from automatically_annotate_mass2motifs.utils import return_non_existing_file_name
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
-from automatically_annotate_mass2motifs.search_matching_spectra_for_mass2motif import SelectSpectraContainingMass2Motif
-from automatically_annotate_mass2motifs.annotation import load_moss_results, Annotation
+from automatically_annotate_mass2motifs.search_matching_spectra_for_mass2motif import ScoresMatrix
+from automatically_annotate_mass2motifs.annotation import Annotation, load_moss_results
 
 
-def create_moss_input_file(smiles_matching_mass2motif,
-                           smiles_not_matching_mass2motif,
+def create_moss_input_file(smiles_matching_mass2motif: List[str],
+                           smiles_not_matching_mass2motif: List[str],
                            output_csv_file_location):
+    """Creates an input file that can be recognized by MOSS"""
     assert not os.path.isfile(output_csv_file_location), "The output file already exists"
     category = np.append(np.zeros(len(smiles_matching_mass2motif), dtype=np.int8),
                          np.ones(len(smiles_not_matching_mass2motif), dtype=np.int8))
@@ -25,83 +25,106 @@ def create_moss_input_file(smiles_matching_mass2motif,
 
 def run_moss(smiles_file_name,
              output_file_name,
-             minimal_support,
-             maximal_support_complement):
+             minimal_support: int,
+             maximal_support_complement: int):
+    """Runs MoSS to detect substructures"""
     assert os.path.isfile(smiles_file_name), "The smiles file does not exist"
     assert not os.path.isfile(output_file_name), "The output file already exists"
+    moss_executable = os.path.join(os.path.dirname(__file__), "MolecularSubstructureMiner/moss.jar")
+    assert os.path.isfile(moss_executable)
+    assert 0 <= minimal_support <= 100 and 0 <= maximal_support_complement <= 100, "The support should be specified as percentage"
+    assert isinstance(minimal_support, int) and isinstance(maximal_support_complement, int), "Expected an percentage for the minimal and maximal support"
     subprocess.run(["java", "-cp",
-                    os.path.join(os.path.dirname(__file__), "MolecularSubstructureMiner/moss.jar"),
+                    moss_executable,
                     "moss.Miner",
                     f"-s{minimal_support}", f"-S{maximal_support_complement}", smiles_file_name, output_file_name])
 
-
-def get_moss_annotation(smiles_matching_mass2motif,
-                        smiles_not_matching_mass2motif,
-                        similarity_threshold,
-                        minimal_relative_support,
-                        maximal_relative_support_complement,
-                        output_base_file_name):
-    # Creates output file names
-    moss_input_file_name = return_non_existing_file_name(output_base_file_name + ".smiles")
-    moss_output_file_name = return_non_existing_file_name(output_base_file_name + ".sub")
-
-    create_moss_input_file(smiles_matching_mass2motif, smiles_not_matching_mass2motif, moss_input_file_name)
-    run_moss(moss_input_file_name,
-             output_file_name=moss_output_file_name,
-             minimal_support=minimal_relative_support,
-             maximal_support_complement=maximal_relative_support_complement)
-    moss_results = load_moss_results(moss_output_file_name)
-    annotation = Annotation(moss_results,
-                            similarity_threshold,
-                            minimal_relative_support,
-                            maximal_relative_support_complement)
-    return annotation
-
-
-def get_annotations(matching_spectra_selector: SelectSpectraContainingMass2Motif,
-                    similarity_threshold,
-                    minimal_relative_support,
-                    maximal_relative_support_complement,
-                    output_directory=None) -> List[Mass2Motif]:
-    """Creates a file containing the smiles matching and not matching a mass2motif readable by MOSS
-
-    :param matching_spectra_selector:
-    :param similarity_threshold:
-    :param minimal_relative_support:
-    :param maximal_relative_support_complement:
-    :param output_directory:
-
-    :return: A list of mass2motifs with Annotation added.
-    """
+def run_moss_wrapper(smiles_matching_mass2motif: List[str],
+                     smiles_not_matching_mass2motif: List[str],
+                     minimal_relative_support: int,
+                     maximal_relative_support_complement: int):
+    """Runs Moss, by creating a temp dir the in between files are removed after running"""
     # Creates a temporary directory for all the intermediate files
-    temp_dir = None
-    if output_directory is None:
-        temp_dir = tempfile.TemporaryDirectory()
-        output_directory = temp_dir.name
-    else:
-        assert not os.path.isfile(output_directory), "A folder is expected, but a file is given"
-        if not os.path.isdir(output_directory):
-            os.mkdir(output_directory)
+    temp_dir = tempfile.TemporaryDirectory()
+    # Creates output file names
+    moss_input_file_name = os.path.join(temp_dir.name, "moss.smiles")
+    moss_output_file_name = os.path.join(temp_dir.name, "moss.sub")
+    create_moss_input_file(smiles_matching_mass2motif, smiles_not_matching_mass2motif, moss_input_file_name)
 
-    matrix_of_matching_spectra = matching_spectra_selector.select_matching_spectra(similarity_threshold)
-    mass2motifs = matching_spectra_selector.mass2motifs
-    for i, mass2motif in enumerate(tqdm(mass2motifs,
-                                        desc="Annotating mass2motifs")):
-        list_of_matching_spectra = matrix_of_matching_spectra[i]
-        smiles_matching_mass2motif, smiles_not_matching_mass2motif = matching_spectra_selector.select_unique_matching_and_non_matching_smiles(
-            list_of_matching_spectra)
+    run_moss(moss_input_file_name, moss_output_file_name, minimal_relative_support, maximal_relative_support_complement)
 
-        # Creates output file names
-        base_file_name = os.path.join(output_directory, f"mass2motif_{mass2motif.motif_name}_min_{similarity_threshold}")
-        annotation = get_moss_annotation(smiles_matching_mass2motif,
-                                         smiles_not_matching_mass2motif,
-                                         similarity_threshold,
-                                         minimal_relative_support,
-                                         maximal_relative_support_complement,
-                                         base_file_name)
-
-        mass2motif.add_moss_annotation(annotation)
+    moss_results = load_moss_results(moss_output_file_name)
     # Deletes the temporary directory
     if temp_dir is not None:
         temp_dir.cleanup()
-    return mass2motifs
+    return moss_results
+
+def add_moss_annotation(mass2motif: Mass2Motif,
+                        scores_matrix: ScoresMatrix,
+                        similarity_threshold: float,
+                        minimal_relative_support: int,
+                        maximal_relative_support_complement: int) -> Mass2Motif:
+    """A wrapper to add a moss annotation to a Mass2Motif"""
+    # Selects the spectra that match with the mass2motif
+    matching_spectra, not_matching_spectra = scores_matrix.select_matching_spectra(similarity_threshold,
+                                                                                   mass2motif)
+    if len(matching_spectra) == 0:
+        return mass2motif
+    smiles_matching_mass2motif, smiles_not_matching_mass2motif = select_unique_matching_and_non_matching_smiles(
+        matching_spectra, not_matching_spectra)
+
+    moss_results = run_moss_wrapper(smiles_matching_mass2motif, smiles_not_matching_mass2motif,
+                                    minimal_relative_support, maximal_relative_support_complement)
+    if moss_results is None:
+        return mass2motif
+    mass2motif.add_moss_annotation(
+        Annotation(moss_results,
+                   similarity_threshold,
+                   minimal_relative_support,
+                   maximal_relative_support_complement,
+                   len(smiles_matching_mass2motif),
+                   len(smiles_not_matching_mass2motif)))
+    return mass2motif
+
+def get_multiple_moss_annotations(mass2motif: Mass2Motif,
+                                  scores_matrix: ScoresMatrix,
+                                  similarity_thresholds: Tuple[float, ...],
+                                  minimal_relative_support: int,
+                                  maximal_relative_support_complement: int):
+    for similarity_threshold in similarity_thresholds:
+        mass2motif = add_moss_annotation(mass2motif,
+                                         scores_matrix,
+                                         similarity_threshold,
+                                         minimal_relative_support,
+                                         maximal_relative_support_complement)
+    return mass2motif
+
+
+def select_unique_matching_and_non_matching_smiles(matching_spectra: List[Spectrum],
+                                                   not_matching_spectra: List[Spectrum]):
+    """Selects all inchikeys not in smiles, and returns 1 smile for each"""
+    inchikey_smiles_dict = create_inchikeys_smiles_dict(matching_spectra+not_matching_spectra)
+
+    matching_inchikeys = []
+    for spectrum in matching_spectra:
+        inchikey = spectrum.get("inchikey")[:14]
+        matching_inchikeys.append(inchikey)
+
+    matching_inchikeys = set(matching_inchikeys)
+    all_inchikeys = set(inchikey_smiles_dict.keys())
+    not_matching_inchikeys = [inchikey for inchikey in all_inchikeys if inchikey not in matching_inchikeys]
+
+    matching_smiles = [inchikey_smiles_dict[inchikey] for inchikey in matching_inchikeys]
+    not_matching_smiles = [inchikey_smiles_dict[inchikey] for inchikey in not_matching_inchikeys]
+    return matching_smiles, not_matching_smiles
+
+
+def create_inchikeys_smiles_dict(spectra):
+    """Creates a dictionary with all inchikeys with one of the smiles that represents this inchikey"""
+    # todo, change to the most common smile for the inchikey
+    inchikey_dict = {}
+    for spectrum in spectra:
+        inchikey = spectrum.get("inchikey")[:14]
+        if inchikey not in inchikey_dict:
+            inchikey_dict[inchikey] = spectrum.get("smiles")
+    return inchikey_dict
