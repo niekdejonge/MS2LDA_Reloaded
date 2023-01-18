@@ -32,10 +32,9 @@ def bin_spectrum(spectrum: Spectrum,
 def return_binned_masses(list_of_masses,
                          list_of_intensities,
                          bin_width):
-    number_of_decimals = len(str(bin_width).split(".")[1])
     binned_masses = {}
     for i, mass in enumerate(list_of_masses):
-        mass_bin = return_mass_bin(mass, bin_width, number_of_decimals)
+        mass_bin = return_mass_bin(mass, bin_width)
         intensity = list_of_intensities[i]
         if mass_bin in binned_masses:
             binned_masses[mass_bin] += intensity
@@ -43,6 +42,13 @@ def return_binned_masses(list_of_masses,
             binned_masses[mass_bin] = intensity
     return binned_masses
 
-def return_mass_bin(mass, bin_width, number_of_decimals):
+def return_mass_bin(mass, bin_width):
+    number_of_decimals = len(str(bin_width).split(".")[1])
     mass_bin = mass - mass % bin_width + 0.5 * bin_width
     return round(mass_bin, number_of_decimals + 1)
+
+def check_correct_bin_width(spectrum: Spectrum,
+                            bin_width):
+    for fragment in spectrum.peaks.mz:
+        assert fragment == return_mass_bin(fragment, bin_width), \
+            f"The fragment {fragment} does not match the bin width {bin_width}"

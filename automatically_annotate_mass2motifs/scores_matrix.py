@@ -5,6 +5,7 @@ from matchms import Spectrum, Fragments
 from matchms.metadata_utils import is_valid_smiles
 import numpy as np
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
+from automatically_annotate_mass2motifs.bin_spectra import check_correct_bin_width
 
 
 class ScoresMatrix:
@@ -36,11 +37,10 @@ def create_similarity_matrix(mass2motifs: List[Mass2Motif],
 
     For the index the motif_set_name and motif_name are combined and for the column names the inchikeys are used"""
     # Check on the first spectrum if all filtering steps were applied
-    assert_correct_spectrum(binned_spectra[0])
     bin_size = mass2motifs[0].bin_size
     assert np.all([mass2motif.bin_size == bin_size for mass2motif in mass2motifs]), \
         f"Expected mass2motifs with the same binning method found {[mass2motif.bin_size for mass2motif in mass2motifs]}"
-    # todo also check if it is the same binning as the spectra
+    assert_correct_spectrum(binned_spectra[0], bin_size)
     # Create the indexes of the mass2motifs
     mass2motif_indexes = [f"{mass2motif.motif_set_name} {mass2motif.motif_name}" for mass2motif in mass2motifs]
     assert len(mass2motif_indexes) == len(set(mass2motif_indexes)), "One of the Motifs has the same motif set name and motif name"
@@ -56,8 +56,10 @@ def create_similarity_matrix(mass2motifs: List[Mass2Motif],
     return pd.DataFrame(scores_matrix, index=mass2motif_indexes, columns=spectra_indexes)
 
 
-def assert_correct_spectrum(spectrum: Spectrum):
+def assert_correct_spectrum(spectrum: Spectrum,
+                            bin_width):
     """Checks if the spectra are normalized have losses and if the spectra have valid smiles"""
+    check_correct_bin_width(spectrum, bin_width)
     assert isinstance(spectrum, Spectrum), "Expected a list of matchms spectrum objects"
     assert is_valid_smiles(spectrum.get("smiles")), f"The smile {spectrum.get('smiles')} is not a valid smile"
     assert len(spectrum.losses.mz) > 0, "Losses have not yet been added"

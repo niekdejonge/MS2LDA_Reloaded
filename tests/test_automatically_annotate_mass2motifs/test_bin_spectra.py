@@ -1,7 +1,8 @@
+import pytest
 from matchms import Spectrum, Fragments
 import numpy as np
 
-from automatically_annotate_mass2motifs.bin_spectra import bin_spectra, bin_spectrum
+from automatically_annotate_mass2motifs.bin_spectra import bin_spectra, bin_spectrum, check_correct_bin_width
 from tests.test_automatically_annotate_mass2motifs.generate_test_data import spectra_with_losses, binned_spectra_005
 
 def test_bin_spectra():
@@ -24,3 +25,9 @@ def test_bin_spectrum():
     assert np.all(result.losses.mz == expected_result.losses.mz), "Expected different loss mz values"
     assert np.all(result.losses.intensities == expected_result.losses.intensities), "Expected different loss intensity values"
 
+def test_check_correct_bin_width():
+    spectrum = spectra_with_losses()[0]
+    binned_spectrum = bin_spectrum(spectrum, 0.1)
+    check_correct_bin_width(binned_spectrum, 0.1)
+    with pytest.raises(AssertionError):
+        check_correct_bin_width(binned_spectrum, 0.5)
