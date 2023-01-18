@@ -1,5 +1,7 @@
+import json
+
 import os
-from typing import List
+from typing import List, Union
 import pickle
 from tqdm import tqdm
 from matplotlib import pyplot as plt
@@ -7,6 +9,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matchms import importing
 from matchms.Spectrum import Spectrum
 from matchms.logging_functions import set_matchms_logger_level
+
+from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
 
 
 def load_pickled_file(file_name):
@@ -86,3 +90,17 @@ def save_figs_in_pdf(figures: list,
     for fig in figures:
         fig.savefig(p, format='pdf')
     p.close()
+
+
+def store_as_json(objects_to_store,
+                  file_name):
+    """Stores mass2motifs or annotations as json.
+
+    The object needs the method .to_dict()"""
+    if not isinstance(objects_to_store, list):
+        objects_to_store = [objects_to_store]
+    json_str = []
+    for object in objects_to_store:
+        json_str.append(object.to_dict())
+    with open(file_name, "w", encoding="utf-8") as file:
+        json.dump(json_str, file, indent=3)

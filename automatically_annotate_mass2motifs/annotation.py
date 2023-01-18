@@ -85,7 +85,7 @@ class Annotation:
         fig.tight_layout()
         return fig
 
-def load_annotations_from_json(dictionaries_from_json: List[dict])-> List[Annotation]:
+def load_annotations_from_dict(dictionaries_from_json: List[dict])-> List[Annotation]:
     annotations = []
     for annotation_dict in dictionaries_from_json:
         dataframe_with_annotations = pd.DataFrame.from_dict(annotation_dict["moss_annotations"])

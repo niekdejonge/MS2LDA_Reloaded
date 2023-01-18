@@ -1,11 +1,11 @@
-from typing import List, Optional, Union
+from typing import List, Optional
 import numpy as np
 from matchms import Fragments
 import json
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 
-from automatically_annotate_mass2motifs.annotation import Annotation, load_annotations_from_json
+from automatically_annotate_mass2motifs.annotation import Annotation, load_annotations_from_dict
 
 
 class Mass2Motif:
@@ -110,16 +110,6 @@ class Mass2Motif:
         plot_mass2motif(self)
         return fig
 
-def save_mass2motifs_json(mass2motifs: Union[List[Mass2Motif], Mass2Motif],
-                          file_name):
-    if not isinstance(mass2motifs, list):
-        mass2motifs = [mass2motifs]
-    json_str = []
-    for mass2motif in mass2motifs:
-        json_str.append(mass2motif.to_dict())
-    with open(file_name, "w", encoding="utf-8") as file:
-        json.dump(json_str, file, indent=3)
-
 
 def load_mass2motifs_json(file_name) -> List[Mass2Motif]:
     with open(file_name, 'r') as file:
@@ -130,10 +120,11 @@ def load_mass2motifs_json(file_name) -> List[Mass2Motif]:
                 fragment_probabilities=list(np.array(spectrum_dict["fragments"])[:, 1]),
                 losses=list(np.array(spectrum_dict["losses"])[:, 0]),
                 loss_probabilities=list(np.array(spectrum_dict["losses"])[:, 1]),
-                bin_size=spectrum_dict["bin_size"], motif_name=spectrum_dict["motif_name"],
+                bin_size=spectrum_dict["bin_size"],
+                motif_name=spectrum_dict["motif_name"],
                 motif_set_name=spectrum_dict["motif_set_name"],
                 manual_annotation=spectrum_dict["manual_annotation"],
-                moss_annotations=load_annotations_from_json(spectrum_dict["moss_annotations"])
+                moss_annotations=load_annotations_from_dict(spectrum_dict["moss_annotations"])
             )
             mass2motifs.append(mass2motif)
     return mass2motifs
