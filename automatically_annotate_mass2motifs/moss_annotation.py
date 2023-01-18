@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import subprocess
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
-from automatically_annotate_mass2motifs.search_matching_spectra_for_mass2motif import ScoresMatrix
+from automatically_annotate_mass2motifs.scores_matrix import ScoresMatrix
 from automatically_annotate_mass2motifs.annotation import Annotation
 
 

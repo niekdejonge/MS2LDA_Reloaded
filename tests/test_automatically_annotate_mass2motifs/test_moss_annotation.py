@@ -3,7 +3,7 @@ from typing import List
 import pandas as pd
 from matchms import Fragments, Spectrum
 import numpy as np
-from automatically_annotate_mass2motifs.search_matching_spectra_for_mass2motif import \
+from automatically_annotate_mass2motifs.scores_matrix import \
     (overlap_in_fragments, ScoresMatrix, similarity_mass2motif_and_spectrum, create_similarity_matrix)
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
 from tests.test_automatically_annotate_mass2motifs.generate_test_data import binned_spectra_005
