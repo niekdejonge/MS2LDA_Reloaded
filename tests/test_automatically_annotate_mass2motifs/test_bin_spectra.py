@@ -1,7 +1,7 @@
 from matchms import Spectrum, Fragments
 import numpy as np
 
-from automatically_annotate_mass2motifs.bin_spectra import bin_spectra, bin_spectrum, Binner
+from automatically_annotate_mass2motifs.bin_spectra import bin_spectra, bin_spectrum
 from tests.test_automatically_annotate_mass2motifs.generate_test_data import spectra_with_losses, binned_spectra_005
 
 def test_bin_spectra():
@@ -13,7 +13,7 @@ def test_bin_spectra():
 
 def test_bin_spectrum():
     spectrum = spectra_with_losses()[0]
-    result = bin_spectrum(spectrum, Binner(0.1))
+    result = bin_spectrum(spectrum, 0.1)
     expected_result = Spectrum(mz=np.array([100.05, 200.75], dtype="float"),
                          intensities=np.array([1.0, 0.5], dtype="float"),
                          metadata={"smiles": "CN=C=O"})
