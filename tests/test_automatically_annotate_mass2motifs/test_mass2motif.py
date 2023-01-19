@@ -70,7 +70,7 @@ def test_save_and_load_mass2motif_as_json(tmp_path):
                             losses=[128.075, 200.725], loss_probabilities=[0.1, 0.25],
                             bin_size=0.05, moss_annotations=[annotation]),
                    Mass2Motif(fragments=[50.025], fragment_probabilities=[0.6],
-                              losses=[80.025, 128.075], loss_probabilities=[0.5, 0.1],
+                              losses=[], loss_probabilities=[],
                               bin_size=0.05)]
 
     file_name = os.path.join(tmp_path, "mass2motifs.json")

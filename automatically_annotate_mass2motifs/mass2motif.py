@@ -70,8 +70,12 @@ class Mass2Motif:
     def to_dict(self) -> dict:
         """Return a dictionary representation of a spectrum, to make it possible to store as json"""
         class_dict = self.__dict__.copy()
-        class_dict["fragments"] = np.vstack((self.fragments.mz, self.fragments.intensities)).T.tolist()
-        class_dict["losses"] = np.vstack((self.losses.mz, self.losses.intensities)).T.tolist()
+        del class_dict["fragments"]
+        del class_dict["losses"]
+        class_dict["fragment_mz"] = self.fragments.mz.tolist()
+        class_dict["fragment_probabilities"] = self.fragments.intensities.tolist()
+        class_dict["loss_mz"] = self.losses.mz.tolist()
+        class_dict["loss_probabilities"] = self.losses.intensities.tolist()
         class_dict["moss_annotations"] = [moss_annotation.to_dict() for moss_annotation in self.moss_annotations]
         return class_dict
 
@@ -116,10 +120,10 @@ def load_mass2motifs_json(file_name) -> List[Mass2Motif]:
         mass2motifs = []
         for spectrum_dict in json.load(file):
             mass2motif = Mass2Motif(
-                fragments=list(np.array(spectrum_dict["fragments"])[:, 0]),
-                fragment_probabilities=list(np.array(spectrum_dict["fragments"])[:, 1]),
-                losses=list(np.array(spectrum_dict["losses"])[:, 0]),
-                loss_probabilities=list(np.array(spectrum_dict["losses"])[:, 1]),
+                fragments=spectrum_dict["fragment_mz"],
+                fragment_probabilities=spectrum_dict["fragment_probabilities"],
+                losses=spectrum_dict["loss_mz"],
+                loss_probabilities=spectrum_dict["loss_probabilities"],
                 bin_size=spectrum_dict["bin_size"],
                 motif_name=spectrum_dict["motif_name"],
                 motif_set_name=spectrum_dict["motif_set_name"],
