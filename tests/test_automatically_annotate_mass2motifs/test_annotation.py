@@ -24,6 +24,20 @@ def test_create_annotation(tmp_path):
     assert result.index.name == "smiles"
 
 
+def test_create_annotation_with_none():
+    annotation = Annotation(moss_annotations=None,
+                            minimal_similarity=0.3,
+                            moss_minimal_relative_support=40.0,
+                            moss_maximal_relative_support_complement=70.0,
+                            nr_of_spectra_matching_mass2motif=10,
+                            nr_of_spectra_not_matching_mass2motif=100)
+    result = annotation.moss_annotations
+    assert isinstance(result, pd.DataFrame)
+    assert list(result.columns) == ["s_abs", "c_abs", "s_rel", "c_rel", "diff_s_rel_and_c_rel"], \
+        "different column names were expected"
+    assert result.index.name == "smiles"
+
+
 def test_store_and_load_annotation_json(tmp_path):
     annotation = generate_annotation()
     file_name = os.path.join(tmp_path, "stored_annotation.json")

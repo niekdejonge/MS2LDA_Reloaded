@@ -1,15 +1,11 @@
 import pandas as pd
 from typing import List, Optional
 import numpy as np
-from matchms.metadata_utils import is_valid_smiles
-from rdkit import Chem
-from rdkit.Chem import Draw
-import matplotlib.pyplot as plt
 
 
 class Annotation:
     def __init__(self,
-                 moss_annotations: pd.DataFrame,
+                 moss_annotations: Optional[pd.DataFrame],
                  minimal_similarity: float,
                  moss_minimal_relative_support: float,
                  moss_maximal_relative_support_complement: float,
@@ -20,7 +16,13 @@ class Annotation:
         self.minimal_similarity = minimal_similarity
         self.moss_minimal_relative_support = moss_minimal_relative_support
         self.moss_maximal_relative_support_complement = moss_maximal_relative_support_complement
-        self.moss_annotations = moss_annotations
+        if moss_annotations is None:
+            self.moss_annotations = pd.DataFrame(data=None,
+                                                 columns=["s_abs", "c_abs", "s_rel", "c_rel", "diff_s_rel_and_c_rel"])
+            self.moss_annotations.index.name = "smiles"
+            print(self.moss_annotations)
+        else:
+            self.moss_annotations = moss_annotations
         self.assert_correct_moss_annotations()
         # sort the annotations
         self.moss_annotations.sort_values("diff_s_rel_and_c_rel", inplace=True, ascending=False)
@@ -57,33 +59,6 @@ class Annotation:
         class_dict["moss_annotations"] = annotations.to_dict()
         return class_dict
 
-    def visualize(self, nr_to_visualize):
-        if nr_to_visualize > len(self.moss_annotations.index):
-            smile_annotations = list(self.moss_annotations.index)
-        else:
-            smile_annotations = list(self.moss_annotations.index)[:nr_to_visualize]
-        nr_of_colums = 3
-        nr_of_rows = (len(smile_annotations)-1)//nr_of_colums+1
-        fig = plt.figure(figsize=(5 * nr_of_colums, 5 * nr_of_rows))
-        for i, smile in enumerate(smile_annotations):
-            ax = fig.add_subplot(nr_of_rows, nr_of_colums, i + 1)
-            if is_valid_smiles(smile):
-                mol = Chem.MolFromSmiles(smile)
-                im = Draw.MolToImage(mol)
-                ax.imshow(im)
-            ax.axis("off")
-            ax.set_title(f"s_rel: {self.moss_annotations['s_rel'][smile]}\n"
-                         f"c_rel: {self.moss_annotations['c_rel'][smile]}\n"
-                         f"Smile: {smile}"
-                         # f"s_abs: {self.moss_annotations['s_abs'][smile]}\n"
-                         # f"c_abs: {self.moss_annotations['c_abs'][smile]}\n"
-                         ,
-                         )
-        fig.suptitle(f"Minimal similarity: {self.minimal_similarity}\n"
-                     f"Matching spectra: {self.nr_of_matching_spectra}\n"
-                     f"Not matching spectra: {self.nr_of_not_matching_spectra}")
-        fig.tight_layout()
-        return fig
 
 def load_annotations_from_dict(dictionaries_from_json: List[dict])-> List[Annotation]:
     annotations = []

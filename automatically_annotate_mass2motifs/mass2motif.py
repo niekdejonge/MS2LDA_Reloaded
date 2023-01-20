@@ -2,8 +2,6 @@ from typing import List, Optional
 import numpy as np
 from matchms import Fragments
 import json
-import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
 
 from automatically_annotate_mass2motifs.annotation import Annotation, load_annotations_from_dict
 
@@ -100,6 +98,18 @@ class Mass2Motif:
         for i, annotation in enumerate(self.moss_annotations):
             annotation.assert_equal(other.moss_annotations[i])
 
+    def check_if_annotation_exists(self,
+                                   minimal_similarity,
+                                   moss_minimal_relative_support,
+                                   moss_maximal_relative_support_complement) -> bool:
+        """Checks if there is already an annotation with these settings stored."""
+        for annotation in self.moss_annotations:
+            if (annotation.minimal_similarity == minimal_similarity and
+                    annotation.moss_minimal_relative_support == moss_minimal_relative_support and
+                    annotation.moss_maximal_relative_support_complement == moss_maximal_relative_support_complement):
+                return True
+        return False
+
     def add_moss_annotation(self, new_annotation: Annotation):
         assert isinstance(new_annotation, Annotation), "Expected type Annotation"
         for annotation in self.moss_annotations:
@@ -108,11 +118,6 @@ class Mass2Motif:
                    annotation.moss_maximal_relative_support_complement != new_annotation.moss_minimal_relative_support, \
                 "The annotation with these settings is already stored in this Mass2Motif"
         self.moss_annotations.append(new_annotation)
-
-    def visualize(self):
-        fig = plt.figure()
-        plot_mass2motif(self)
-        return fig
 
 
 def load_mass2motifs_json(file_name) -> List[Mass2Motif]:
@@ -132,110 +137,3 @@ def load_mass2motifs_json(file_name) -> List[Mass2Motif]:
             )
             mass2motifs.append(mass2motif)
     return mass2motifs
-
-
-def plot_mass2motif(mass2motif: Mass2Motif,
-                    ax=None) -> plt.Axes:
-    """Plots a mass2motif
-    Code is largely taken from package "spectrum_utils".
-    Parameters
-    ----------
-    mass2motif:
-        The mass2motif that should be plotted
-    ax:
-        Axes instance on which to plot the Mass2motif. If None the current Axes
-        instance is used.
-    Returns
-    -------
-    plt.Axes
-        The matplotlib Axes instance on which the spectra are plotted.
-    """
-    if ax is None:
-        ax = plt.gca()
-
-    # Top spectrum.
-    plot_fragments(mass2motif.fragments, mirror_intensity=False, ax=ax, peak_color="darkblue")
-
-    # Mirrored bottom spectrum.
-    plot_fragments(mass2motif.losses, mirror_intensity=True, ax=ax, peak_color="red")
-    ax.set_ylim(-1, 1)
-
-    ax.axhline(0, color="#9E9E9E", zorder=10)
-    if len(mass2motif.losses.mz) != 0 and len(mass2motif.fragments.mz) != 0:
-        # Update axes so that both spectra fit.
-        min_mz = max([0, np.floor(mass2motif.fragments.mz[0] / 100 - 1) * 100,
-                      np.floor(mass2motif.losses.mz[0] / 100 - 1) * 100,])
-        max_mz = max([np.ceil(mass2motif.fragments.mz[-1] / 100 + 1) * 100,
-                      np.ceil(mass2motif.losses.mz[-1] / 100 + 1) * 100,])
-    elif len(mass2motif.fragments.mz) != 0:
-        min_mz = max(0, np.floor(mass2motif.fragments.mz[0] / 100 - 1) * 100)
-        max_mz = np.ceil(mass2motif.fragments.mz[-1] / 100 + 1) * 100
-    elif len(mass2motif.losses.mz) != 0:
-        min_mz = max(0, np.floor(mass2motif.losses.mz[0] / 100 - 1) * 100)
-        max_mz = np.ceil(mass2motif.losses.mz[-1] / 100 + 1) * 100
-    else:
-        assert False, "A Mass2motif needs to have at least one fragment or loss"
-    ax.set_xlim(min_mz, max_mz)
-    # makes sure the positive and negative axis are plotted correctly
-    ax.yaxis.set_major_locator(mticker.AutoLocator())
-    ax.yaxis.set_minor_locator(mticker.AutoMinorLocator())
-    ax.yaxis.set_major_formatter(
-        mticker.FuncFormatter(lambda x, pos: f"{abs(x):.2f}")
-    )
-
-    name1 = "Fragments"
-    name2 = "Losses"
-
-    x_text = 0.04 * (max_mz - min_mz)
-    ax.text(x_text, 1, name1, ha="left", va="top", zorder=2, backgroundcolor="white")
-    ax.text(x_text, -1, name2, ha="left", va="bottom", zorder=2, backgroundcolor="white")
-    ax.set_title(f"Mass2Motif: {mass2motif.manual_annotation}")
-    return ax
-
-
-def plot_fragments(fragments: Fragments,
-                   mirror_intensity=False,
-                   ax=None,
-                   grid=True,
-                   peak_color="teal") -> plt.Axes:
-    """
-    Plots fragments
-    """
-    # pylint: disable=too-many-locals, too-many-arguments
-    if ax is None:
-        ax = plt.gca()
-
-    def make_stems():
-        """calculate where the stems of the spectrum peaks are going to be"""
-        x = np.zeros([2, fragments.mz.size], dtype="float")
-        y = np.zeros(x.shape)
-        x[:, :] = np.tile(fragments.mz, (2, 1))
-        y[1, :] = fragments.intensities
-        return x, y
-
-    x, y = make_stems()
-
-    if mirror_intensity is True:
-        y = -y
-    ax.plot(x, y, color=peak_color, linewidth=1.0, marker="", zorder=5)
-
-    y_max = 1.10
-    ax.set_ylim(*(0, y_max) if not mirror_intensity else (-y_max, 0))
-
-    ax.xaxis.set_minor_locator(mticker.AutoLocator())
-    ax.yaxis.set_minor_locator(mticker.AutoLocator())
-    ax.xaxis.set_minor_locator(mticker.AutoMinorLocator())
-    ax.yaxis.set_minor_locator(mticker.AutoMinorLocator())
-    if grid in (True, "both", "major"):
-        ax.grid(visible=True, which="major", color="#9E9E9E", linewidth=0.2)
-    if grid in (True, "both", "minor"):
-        ax.grid(visible=True, which="minor", color="#9E9E9E", linewidth=0.2)
-    ax.set_axisbelow(True)
-
-    ax.tick_params(axis="both", which="both", labelsize="small")
-    y_ticks = ax.get_yticks()
-    ax.set_yticks(y_ticks[y_ticks <= 1.0])
-
-    ax.set_xlabel("m/z", style="italic")
-    ax.set_ylabel("Probability")
-    return ax
