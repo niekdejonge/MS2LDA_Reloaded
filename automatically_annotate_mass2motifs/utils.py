@@ -1,16 +1,12 @@
 import json
 
 import os
-from typing import List, Union
+from typing import List
 import pickle
 from tqdm import tqdm
-from matplotlib import pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 from matchms import importing
 from matchms.Spectrum import Spectrum
 from matchms.logging_functions import set_matchms_logger_level
-
-from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
 
 
 def load_pickled_file(file_name):
@@ -81,15 +77,6 @@ def convert_file_to_matchms_spectrum_objects(file_name,
         assert isinstance(spectra[0], Spectrum), "Expected list of spectra"
         return spectra
     assert False, f"File extension of file: {file_name} is not recognized"
-
-def save_figs_in_pdf(figures: list,
-                     file_name):
-    """Saves multiple figures into one pdf file"""
-    file_name = return_non_existing_file_name(file_name)
-    p = PdfPages(file_name)
-    for fig in figures:
-        fig.savefig(p, format='pdf')
-    p.close()
 
 
 def store_as_json(objects_to_store,

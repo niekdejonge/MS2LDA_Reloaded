@@ -1,13 +1,17 @@
 import os
 import numpy as np
+from tqdm import tqdm
 from matchms import Fragments
 from matchms.metadata_utils import is_valid_smiles
 from matplotlib import pyplot as plt, ticker as mticker
+from matplotlib.backends.backend_pdf import PdfPages
 from rdkit import Chem
+from rdkit.Chem.Descriptors import MolWt
 from rdkit.Chem import Draw
 
 from automatically_annotate_mass2motifs.annotation import Annotation
 from automatically_annotate_mass2motifs.mass2motif import load_mass2motifs_json, Mass2Motif
+from automatically_annotate_mass2motifs.utils import return_non_existing_file_name
 
 
 def plot_fragments(fragments: Fragments,
@@ -111,10 +115,14 @@ def visualize_annotation(annotation: Annotation, nr_to_visualize):
             mol = Chem.MolFromSmiles(smile)
             im = Draw.MolToImage(mol)
             ax.imshow(im)
+            molar_weigth = MolWt(mol)
+        else:
+            molar_weigth = 0
         ax.axis("off")
         ax.set_title(f"s_rel: {annotation.moss_annotations['s_rel'][smile]}\n"
                      f"c_rel: {annotation.moss_annotations['c_rel'][smile]}\n"
-                     f"Smile: {smile}"
+                     f"Smile: {smile}\n"
+                     f"Mass: {molar_weigth:.1f}"
                      # f"s_abs: {self.moss_annotations['s_abs'][smile]}\n"
                      # f"c_abs: {self.moss_annotations['c_abs'][smile]}\n"
                      ,
@@ -125,17 +133,29 @@ def visualize_annotation(annotation: Annotation, nr_to_visualize):
     fig.tight_layout()
     return fig
 
+
+def save_figs_in_pdf(figures: list,
+                     file_name):
+    """Saves multiple figures into one pdf file"""
+    file_name = return_non_existing_file_name(file_name)
+    p = PdfPages(file_name)
+    for fig in tqdm(figures, desc="Converting pictures to PDF"):
+        fig.savefig(p, format='pdf')
+    p.close()
+
+
 if __name__ == "__main__":
     base_directory = "../data/automatic_annotation/gnps_library_derived_mass2motifs/scores_matrix/"
-    annotated_mass2motifs = load_mass2motifs_json(os.path.join(base_directory, "annotated_mass2motifs_gnps_library_derived_mass2motifs.json"))
-
-    # fig = plt.figure()
-    # plot_mass2motif(annotated_mass2motifs[0])
-    # fig.show()
-    for mass2motif in annotated_mass2motifs:
-        fig =plt.figure()
+    annotated_mass2motifs = load_mass2motifs_json(os.path.join(base_directory,
+                                                               "all_annotated_mass2motifs_gnps_library_derived_mass2motifs(1).json"))
+    figures = []
+    for mass2motif in tqdm(annotated_mass2motifs,
+                           desc="Creating figures for mass2motif annotations"):
+        fig = plt.figure(figsize=(15, 10))
         plot_mass2motif(mass2motif)
-        fig.show()
+        figures.append(fig)
         for annotation in mass2motif.moss_annotations:
             fig = visualize_annotation(annotation, 6)
-            fig.show()
+            figures.append(fig)
+    save_figs_in_pdf(figures,
+                     "../data/test/annotated_mass2motifs_gnps_library_derived_mass2motifs.pdf")
