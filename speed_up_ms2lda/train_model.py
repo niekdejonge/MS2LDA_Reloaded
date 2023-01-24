@@ -53,5 +53,5 @@ def train_and_save_model(corpus_dir, overwrite_existing_file = False):
     model.save(save_location)
 
 if __name__ == "__main__":
-    corpus_dir = "../data/test_corpus"
+    corpus_dir = "../data/speed_up_ms2lda/test_corpus"
     train_and_save_model(corpus_dir, True)
