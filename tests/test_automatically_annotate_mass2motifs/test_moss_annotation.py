@@ -38,6 +38,7 @@ def test_run_moss(tmp_path):
                           '1,O=C-C-C,4,3,1,50.0,0,0.0\n',
                           '2,C(-C)-C,3,2,2,100.0,1,50.0\n']
 
+
 def test_run_moss_wrapper(tmp_path):
     result = run_moss_wrapper(smiles_matching_mass2motif=["CCC=O", "CCC"],
                               smiles_not_matching_mass2motif=["CCCC", "CC"],
@@ -49,6 +50,7 @@ def test_run_moss_wrapper(tmp_path):
                                    columns=["s_abs", "c_abs", "s_rel", "c_rel", "diff_s_rel_and_c_rel"])
     expected_result.index.name = "smiles"
     pd.testing.assert_frame_equal(expected_result, result)
+
 
 def test_add_moss_annotations():
     spectra = binned_spectra_005()
@@ -66,6 +68,18 @@ def test_add_moss_annotations():
                                    columns=["s_abs", "c_abs", "s_rel", "c_rel", "diff_s_rel_and_c_rel"])
     expected_result.index.name = "smiles"
     pd.testing.assert_frame_equal(expected_result, annotation.moss_annotations)
+
+
+def test_get_moss_annotation_no_results():
+    spectra = binned_spectra_005()
+    mass2motif = Mass2Motif(fragments=[300.025], fragment_probabilities= [0.5],
+                            losses=[300.075, 500.725], loss_probabilities=[0.1, 0.25],
+                            bin_size=0.05)
+    scores_matrix = create_similarity_matrix([mass2motif], spectra)
+    spectrum_selector = ScoresMatrix(spectra, scores_matrix)
+    annotation = get_moss_annotation(mass2motif, spectrum_selector, 0.05, 10, 80)
+    assert isinstance(annotation, Annotation)
+
 
 if __name__ == "__main__":
     pass
