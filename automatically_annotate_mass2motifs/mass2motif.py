@@ -101,21 +101,24 @@ class Mass2Motif:
     def check_if_annotation_exists(self,
                                    minimal_similarity,
                                    moss_minimal_relative_support,
-                                   moss_maximal_relative_support_complement) -> bool:
+                                   moss_maximal_relative_support_complement,
+                                   minimal_number_of_matching_spectra) -> bool:
         """Checks if there is already an annotation with these settings stored."""
         for annotation in self.moss_annotations:
             if (annotation.minimal_similarity == minimal_similarity and
                     annotation.moss_minimal_relative_support == moss_minimal_relative_support and
-                    annotation.moss_maximal_relative_support_complement == moss_maximal_relative_support_complement):
+                    annotation.moss_maximal_relative_support_complement == moss_maximal_relative_support_complement and
+                    annotation.minimal_number_of_matching_spectra == minimal_number_of_matching_spectra):
                 return True
         return False
 
     def add_moss_annotation(self, new_annotation: Annotation):
         assert isinstance(new_annotation, Annotation), "Expected type Annotation"
         for annotation in self.moss_annotations:
-            assert annotation.minimal_similarity != new_annotation.minimal_similarity or \
-                   annotation.moss_minimal_relative_support != new_annotation.moss_minimal_relative_support or \
-                   annotation.moss_maximal_relative_support_complement != new_annotation.moss_minimal_relative_support, \
+            assert (annotation.minimal_similarity != new_annotation.minimal_similarity or
+                    annotation.moss_minimal_relative_support != new_annotation.moss_minimal_relative_support or
+                    annotation.moss_maximal_relative_support_complement != new_annotation.moss_minimal_relative_support or
+                    annotation.minimal_number_of_matching_spectra != new_annotation.moss_minimal_relative_support), \
                 "The annotation with these settings is already stored in this Mass2Motif"
         self.moss_annotations.append(new_annotation)
 

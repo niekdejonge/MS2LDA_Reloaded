@@ -10,7 +10,8 @@ class Annotation:
                  moss_minimal_relative_support: float,
                  moss_maximal_relative_support_complement: float,
                  nr_of_spectra_matching_mass2motif: int,
-                 nr_of_spectra_not_matching_mass2motif: int):
+                 nr_of_spectra_not_matching_mass2motif: int,
+                 minimal_number_of_matching_spectra: int = 0):
 
         # Settings
         self.minimal_similarity = minimal_similarity
@@ -20,7 +21,6 @@ class Annotation:
             self.moss_annotations = pd.DataFrame(data=None,
                                                  columns=["s_abs", "c_abs", "s_rel", "c_rel", "diff_s_rel_and_c_rel"])
             self.moss_annotations.index.name = "smiles"
-            print(self.moss_annotations)
         else:
             self.moss_annotations = moss_annotations
         self.assert_correct_moss_annotations()
@@ -28,7 +28,7 @@ class Annotation:
         self.moss_annotations.sort_values("diff_s_rel_and_c_rel", inplace=True, ascending=False)
         self.nr_of_matching_spectra = nr_of_spectra_matching_mass2motif
         self.nr_of_not_matching_spectra = nr_of_spectra_not_matching_mass2motif
-
+        self.minimal_number_of_matching_spectra = minimal_number_of_matching_spectra
 
     def assert_correct_moss_annotations(self):
         assert isinstance(self.moss_annotations, pd.DataFrame)
