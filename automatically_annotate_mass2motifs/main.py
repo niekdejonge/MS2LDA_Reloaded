@@ -8,7 +8,7 @@ from automatically_annotate_mass2motifs.mass2motif import load_mass2motifs_json
 from automatically_annotate_mass2motifs.download_mass2motifs import download_motif_set_from_motifdb
 from automatically_annotate_mass2motifs.clean_library_spectra import get_cleaned_and_binned_spectra
 from automatically_annotate_mass2motifs.scores_matrix import create_similarity_matrix
-
+from automatically_annotate_mass2motifs.visualize import save_mass2motif_results_in_pdf
 
 def main(raw_library_spectra_file: str,
          motif_set_name: str,
@@ -59,6 +59,9 @@ def main(raw_library_spectra_file: str,
                                                 minimal_relative_support=60,
                                                 maximal_relative_support_complement=80,
                                                 save_in_between_file=annotated_mass2motifs_file_name)
+
+    save_mass2motif_results_in_pdf(mass2motifs,
+                                   os.path.join(directory_to_store_in_between_steps, f"results_{motif_set_name}.pdf"))
     return spectra_selector, mass2motifs
 
 

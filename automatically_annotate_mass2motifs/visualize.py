@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from typing import List
 from tqdm import tqdm
 from matchms import Fragments
 from matchms.metadata_utils import is_valid_smiles
@@ -122,11 +123,7 @@ def visualize_annotation(annotation: Annotation, nr_to_visualize):
         ax.set_title(f"s_rel: {annotation.moss_annotations['s_rel'][smile]}\n"
                      f"c_rel: {annotation.moss_annotations['c_rel'][smile]}\n"
                      f"Smile: {smile}\n"
-                     f"Mass: {molar_weigth:.1f}"
-                     # f"s_abs: {self.moss_annotations['s_abs'][smile]}\n"
-                     # f"c_abs: {self.moss_annotations['c_abs'][smile]}\n"
-                     ,
-                     )
+                     f"Mass: {molar_weigth:.1f}")
     fig.suptitle(f"Minimal similarity: {annotation.minimal_similarity}\n"
                  f"Matching spectra: {annotation.nr_of_matching_spectra}\n"
                  f"Not matching spectra: {annotation.nr_of_not_matching_spectra}")
@@ -144,18 +141,20 @@ def save_figs_in_pdf(figures: list,
     p.close()
 
 
-if __name__ == "__main__":
-    base_directory = "../data/automatic_annotation/gnps_library_derived_mass2motifs/scores_matrix/"
-    annotated_mass2motifs = load_mass2motifs_json(os.path.join(base_directory,
-                                                               "all_annotated_mass2motifs_gnps_library_derived_mass2motifs(1).json"))
-    figures = []
-    for mass2motif in tqdm(annotated_mass2motifs,
-                           desc="Creating figures for mass2motif annotations"):
-        fig = plt.figure(figsize=(15, 10))
+def save_mass2motif_results_in_pdf(mass2motifs: List[Mass2Motif],
+                                   file_name: str,
+                                   nr_per_annotation=6):
+    """Saves the annotations into a pdf file"""
+    file_name = return_non_existing_file_name(file_name)
+    p = PdfPages(file_name)
+    for mass2motif in tqdm(mass2motifs,
+                           desc="Saving mass2motif results in pdf"):
+        fig = plt.figure(figsize=(15, 5 * (nr_per_annotation - 1) // 4))
         plot_mass2motif(mass2motif)
-        figures.append(fig)
+        fig.savefig(p, format="pdf")
+        plt.close(fig)
         for annotation in mass2motif.moss_annotations:
-            fig = visualize_annotation(annotation, 6)
-            figures.append(fig)
-    save_figs_in_pdf(figures,
-                     "../data/test/annotated_mass2motifs_gnps_library_derived_mass2motifs.pdf")
+            fig = visualize_annotation(annotation, nr_per_annotation)
+            fig.savefig(p, format="pdf")
+            plt.close(fig)
+    p.close()
