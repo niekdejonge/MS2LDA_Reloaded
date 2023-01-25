@@ -8,7 +8,7 @@ import pandas as pd
 import subprocess
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
 from automatically_annotate_mass2motifs.scores_matrix import ScoresMatrix
-from automatically_annotate_mass2motifs.annotation import Annotation
+from automatically_annotate_mass2motifs.annotation import Annotation, AnnotationSettings
 from automatically_annotate_mass2motifs.utils import store_as_json, return_non_existing_file_name
 
 
@@ -34,8 +34,10 @@ def run_moss(smiles_file_name,
     assert not os.path.isfile(output_file_name), "The output file already exists"
     moss_executable = os.path.join(os.path.dirname(__file__), "MolecularSubstructureMiner/moss.jar")
     assert os.path.isfile(moss_executable)
-    assert 0 <= minimal_support <= 100 and 0 <= maximal_support_complement <= 100, "The support should be specified as percentage"
-    assert isinstance(minimal_support, int) and isinstance(maximal_support_complement, int), "Expected an percentage for the minimal and maximal support"
+    assert 0 <= minimal_support <= 100 and 0 <= maximal_support_complement <= 100, \
+        "The support should be specified as percentage"
+    assert isinstance(minimal_support, int) and isinstance(maximal_support_complement, int), \
+        "Expected an percentage for the minimal and maximal support"
     subprocess.run(["java", "-cp",
                     moss_executable,
                     "moss.Miner",
@@ -63,40 +65,27 @@ def run_moss_wrapper(smiles_matching_mass2motif: List[str],
 
 def get_moss_annotation(mass2motif: Mass2Motif,
                         scores_matrix: ScoresMatrix,
-                        similarity_threshold: float,
-                        minimal_relative_support: int,
-                        maximal_relative_support_complement: int,
-                        minimal_number_of_matching_spectra=10) -> Optional[Annotation]:
+                        annotation_settings: AnnotationSettings) -> Optional[Annotation]:
     """A wrapper to add a moss annotation to a Mass2Motif"""
-    # pylint: disable=too-many-arguments
     # Selects the spectra that match with the mass2motif
-    matching_spectra, not_matching_spectra = scores_matrix.select_matching_spectra(similarity_threshold,
+    matching_spectra, not_matching_spectra = scores_matrix.select_matching_spectra(annotation_settings.minimal_similarity,
                                                                                    mass2motif)
     smiles_matching_mass2motif, smiles_not_matching_mass2motif = select_unique_matching_and_non_matching_smiles(
         matching_spectra, not_matching_spectra)
 
-    if len(smiles_matching_mass2motif) < minimal_number_of_matching_spectra:
+    if len(smiles_matching_mass2motif) < annotation_settings.minimal_number_of_matching_spectra:
         # Small number of smiles are not reliable and in addition can result in very long runtimes,
         # since two almost duplicate large molecules will have an exponentially growing number of possible substructures.
         print(f"The number of matching spectra is {len(matching_spectra)}, "
-              f"which is less than {minimal_number_of_matching_spectra}")
-        return Annotation(None,
-                          similarity_threshold,
-                          minimal_relative_support,
-                          maximal_relative_support_complement,
-                          len(smiles_matching_mass2motif),
-                          len(smiles_not_matching_mass2motif),
-                          minimal_number_of_matching_spectra)
+              f"which is less than {annotation_settings.minimal_number_of_matching_spectra}")
+        return Annotation(None, annotation_settings, len(smiles_matching_mass2motif),
+                          len(smiles_not_matching_mass2motif))
     moss_results = run_moss_wrapper(smiles_matching_mass2motif, smiles_not_matching_mass2motif,
-                                    minimal_relative_support, maximal_relative_support_complement)
+                                    annotation_settings.moss_minimal_relative_support,
+                                    annotation_settings.moss_maximal_relative_support_complement)
 
-    return Annotation(moss_results,
-                      similarity_threshold,
-                      minimal_relative_support,
-                      maximal_relative_support_complement,
-                      len(smiles_matching_mass2motif),
-                      len(smiles_not_matching_mass2motif),
-                      minimal_number_of_matching_spectra)
+    return Annotation(moss_results, annotation_settings, len(smiles_matching_mass2motif),
+                      len(smiles_not_matching_mass2motif))
 
 
 def get_multiple_moss_annotations(mass2motifs: List[Mass2Motif],
@@ -116,8 +105,11 @@ def get_multiple_moss_annotations(mass2motifs: List[Mass2Motif],
                                                      maximal_relative_support_complement):
                 print(f"Mass2Motif {mass2motif.motif_name} was already annotated with similarity threshold: {similarity_threshold}")
             else:
-                annotation = get_moss_annotation(mass2motif, scores_matrix, similarity_threshold, minimal_relative_support,
-                                                 maximal_relative_support_complement)
+                annotation_settings = AnnotationSettings(similarity_threshold,
+                                                         minimal_relative_support,
+                                                         maximal_relative_support_complement,
+                                                         minimal_number_of_matching_spectra=10)
+                annotation = get_moss_annotation(mass2motif, scores_matrix, annotation_settings)
                 mass2motif.add_moss_annotation(annotation)
                 if save_in_between_file is not None:
                     store_as_json(mass2motifs, save_in_between_file)

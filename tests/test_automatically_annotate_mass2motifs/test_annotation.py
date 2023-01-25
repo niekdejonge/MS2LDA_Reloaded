@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import json
-from automatically_annotate_mass2motifs.annotation import Annotation, load_annotations_from_dict
+from automatically_annotate_mass2motifs.annotation import Annotation, load_annotations_from_dict, AnnotationSettings
 from automatically_annotate_mass2motifs.moss_annotation import load_moss_results
 from automatically_annotate_mass2motifs.utils import store_as_json
 from tests.test_automatically_annotate_mass2motifs.generate_test_data import generate_moss_results_file, generate_annotation
@@ -11,10 +11,12 @@ def test_create_annotation(tmp_path):
     file_name = os.path.join(tmp_path, "moss_results")
     generate_moss_results_file(file_name)
     moss_annotations = load_moss_results(file_name)
+    annotation_settings = AnnotationSettings(minimal_similarity=0.3,
+                                             moss_minimal_relative_support=40.0,
+                                             moss_maximal_relative_support_complement=70.0,
+                                             minimal_number_of_matching_spectra=10)
     annotation = Annotation(moss_annotations=moss_annotations,
-                            minimal_similarity=0.3,
-                            moss_minimal_relative_support=40.0,
-                            moss_maximal_relative_support_complement=70.0,
+                            annotation_settings=annotation_settings,
                             nr_of_spectra_matching_mass2motif=10,
                             nr_of_spectra_not_matching_mass2motif=100)
     result = annotation.moss_annotations
@@ -25,10 +27,12 @@ def test_create_annotation(tmp_path):
 
 
 def test_create_annotation_with_none():
+    annotation_settings = AnnotationSettings(minimal_similarity=0.3,
+                                             moss_minimal_relative_support=40.0,
+                                             moss_maximal_relative_support_complement=70.0,
+                                             minimal_number_of_matching_spectra=10)
     annotation = Annotation(moss_annotations=None,
-                            minimal_similarity=0.3,
-                            moss_minimal_relative_support=40.0,
-                            moss_maximal_relative_support_complement=70.0,
+                            annotation_settings=annotation_settings,
                             nr_of_spectra_matching_mass2motif=10,
                             nr_of_spectra_not_matching_mass2motif=100)
     result = annotation.moss_annotations

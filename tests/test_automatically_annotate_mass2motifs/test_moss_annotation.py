@@ -9,7 +9,7 @@ from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
 from tests.test_automatically_annotate_mass2motifs.generate_test_data import binned_spectra_005
 from automatically_annotate_mass2motifs.moss_annotation import (create_moss_input_file, run_moss,
                                                                 run_moss_wrapper, get_moss_annotation)
-from automatically_annotate_mass2motifs.annotation import Annotation
+from automatically_annotate_mass2motifs.annotation import Annotation, AnnotationSettings
 
 
 def test_create_moss_input_file(tmp_path):
@@ -59,9 +59,13 @@ def test_add_moss_annotations():
                             bin_size=0.05)
     scores_matrix = create_similarity_matrix([mass2motif], spectra)
     spectrum_selector = ScoresMatrix(spectra, scores_matrix)
-    annotation = get_moss_annotation(mass2motif, spectrum_selector, 0.05, 10, 80, 0)
+    annotation_settings = AnnotationSettings(minimal_similarity=0.05,
+                                             moss_minimal_relative_support=10,
+                                             moss_maximal_relative_support_complement=80,
+                                             minimal_number_of_matching_spectra=0)
+    annotation = get_moss_annotation(mass2motif, spectrum_selector, annotation_settings)
     assert isinstance(annotation, Annotation)
-    expected_result = pd.DataFrame([[2, 0 ,100.0, 0.0, 100.0],
+    expected_result = pd.DataFrame([[2, 0,100.0, 0.0, 100.0],
                                     [1, 0, 50.0, 0.0, 50.0],
                                     [1, 0, 50.0, 0.0, 50.0]],
                                    index=["C", "O=C=N-C", "C1-C-C-C-C-C-1"],
@@ -77,7 +81,11 @@ def test_get_moss_annotation_no_results():
                             bin_size=0.05)
     scores_matrix = create_similarity_matrix([mass2motif], spectra)
     spectrum_selector = ScoresMatrix(spectra, scores_matrix)
-    annotation = get_moss_annotation(mass2motif, spectrum_selector, 0.05, 10, 80)
+    annotation_settings = AnnotationSettings(minimal_similarity=0.05,
+                                             moss_minimal_relative_support=10,
+                                             moss_maximal_relative_support_complement=80,
+                                             minimal_number_of_matching_spectra=0)
+    annotation = get_moss_annotation(mass2motif, spectrum_selector, annotation_settings)
     assert isinstance(annotation, Annotation)
 
 

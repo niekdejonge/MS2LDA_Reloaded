@@ -3,9 +3,10 @@ import numpy as np
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif, load_mass2motifs_json
 from automatically_annotate_mass2motifs.utils import store_as_json
 from automatically_annotate_mass2motifs.download_mass2motifs import convert_words_to_peaks
-from automatically_annotate_mass2motifs.annotation import Annotation
+from automatically_annotate_mass2motifs.annotation import Annotation, AnnotationSettings
 from automatically_annotate_mass2motifs.moss_annotation import load_moss_results
-from tests.test_automatically_annotate_mass2motifs.generate_test_data import generate_moss_results_file
+from tests.test_automatically_annotate_mass2motifs.generate_test_data import (generate_moss_results_file,
+                                                                              generate_annotation)
 
 
 def test_convert_words_to_peaks():
@@ -56,15 +57,7 @@ def test_creating_mass2motif_with_incorrect_mass_bin():
     assert error_raised, "An assert should warn for a wrongly specified bin_size"
 
 def test_save_and_load_mass2motif_as_json(tmp_path):
-    file_name = os.path.join(tmp_path, "moss_results")
-    generate_moss_results_file(file_name)
-    moss_annotations = load_moss_results(file_name)
-    annotation = Annotation(moss_annotations=moss_annotations,
-                            minimal_similarity=0.3,
-                            moss_minimal_relative_support=40.0,
-                            moss_maximal_relative_support_complement=70.0,
-                            nr_of_spectra_matching_mass2motif=10,
-                            nr_of_spectra_not_matching_mass2motif=100)
+    annotation = generate_annotation()
 
     mass2motifs = [Mass2Motif(fragments=[100.025], fragment_probabilities= [0.5],
                             losses=[128.075, 200.725], loss_probabilities=[0.1, 0.25],

@@ -3,7 +3,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 from matchms import Spectrum, Fragments
-from automatically_annotate_mass2motifs.annotation import Annotation
+from automatically_annotate_mass2motifs.annotation import Annotation, AnnotationSettings
 from automatically_annotate_mass2motifs.moss_annotation import load_moss_results
 
 def spectra_with_losses() -> List[Spectrum]:
@@ -55,10 +55,12 @@ def generate_moss_annotation():
 
 def generate_annotation()->Annotation:
     moss_annotations = generate_moss_annotation()
+    annotation_settings = AnnotationSettings(minimal_similarity=0.3,
+                                             moss_minimal_relative_support=40.0,
+                                             moss_maximal_relative_support_complement=70.0,
+                                             minimal_number_of_matching_spectra=10)
     annotation = Annotation(moss_annotations=moss_annotations,
-                            minimal_similarity=0.3,
-                            moss_minimal_relative_support=40.0,
-                            moss_maximal_relative_support_complement=70.0,
+                            annotation_settings=annotation_settings,
                             nr_of_spectra_matching_mass2motif=10,
                             nr_of_spectra_not_matching_mass2motif=100)
     return annotation
