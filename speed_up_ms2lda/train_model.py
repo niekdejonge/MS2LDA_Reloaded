@@ -1,11 +1,7 @@
 import os
-import sys
 import logging
-import gensim.models
-from gensim.models import LdaMulticore, CoherenceModel
+from gensim.models import LdaMulticore
 from gensim import corpora
-from tqdm import tqdm
-from pprint import pprint
 
 
 def train_lda_model(dictionary,
@@ -25,6 +21,7 @@ def train_lda_model(dictionary,
     :param eval_every:
     :return:
     """
+    # pylint: disable=too-many-arguments
     # Make a index to word dictionary.
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
     # token2id = dictionary.token2id  # This is only to "load" the dictionary.
@@ -52,6 +49,7 @@ def train_and_save_model(corpus_dir, overwrite_existing_file = False):
     model = train_lda_model(dictionary, corpus)
     model.save(save_location)
 
+
 if __name__ == "__main__":
-    corpus_dir = "../data/test_corpus"
+    corpus_dir = "../data/speed_up_ms2lda/test_corpus"
     train_and_save_model(corpus_dir, True)

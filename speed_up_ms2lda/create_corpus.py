@@ -8,7 +8,7 @@ from matchms import Spectrum
 from matchms.filtering import add_losses, default_filters, normalize_intensities, \
     reduce_to_number_of_peaks, require_minimum_number_of_peaks, select_by_mz, \
     select_by_relative_intensity
-from utils import convert_file_to_matchms_spectrum_objects, add_unknown_charges_to_spectra
+from utils import convert_file_to_matchms_spectrum_objects
 from gensim import corpora
 import logging
 
@@ -57,8 +57,8 @@ def spectrumdoc2bow(spectrum_document: SpectrumDocument,
     assert len(words) == len(weights), "The words and weights are expected to be of equal length"
     # The defaultdict, automatically creates a new key when the key is not present and a value is added.
     bag_of_words = defaultdict(int)
-    for i in range(len(words)):
-        bag_of_words[token2id[words[i]]] += int(round(weights[i] * 10000))
+    for i, word in enumerate(words):
+        bag_of_words[token2id[word]] += int(round(weights[i] * 10000))
     # return tokenids, in ascending id order
     bag_of_words = sorted(bag_of_words.items())
     return bag_of_words
@@ -86,4 +86,4 @@ def create_dict_and_corpus(spectrum_docs: List[SpectrumDocument],
 if __name__ == "__main__":
     filtered_spectra = load_and_filter_spectra("../data/Brocadia-Excl1-POS-1.mzML")
     create_dict_and_corpus(filtered_spectra,
-                  "../data/test_corpus")
+                           "../data/speed_up_ms2lda/test_corpus")

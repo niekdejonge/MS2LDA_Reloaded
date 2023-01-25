@@ -1,5 +1,6 @@
 # User specific excluded folders
 data
+automatically_annotate_mass2motifs/experiment_files
 
 # Editors
 .vscode/
