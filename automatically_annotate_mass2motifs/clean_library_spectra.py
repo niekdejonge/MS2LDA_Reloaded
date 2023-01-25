@@ -1,14 +1,14 @@
 import os
 from tqdm import tqdm
 from typing import Optional
-from matchms import exporting
+from matchms import exporting, Spectrum
 import matchms.filtering as msfilters
 from matchms.logging_functions import set_matchms_logger_level
 from matchms.metadata_utils import is_valid_smiles
 from automatically_annotate_mass2motifs.bin_spectra import bin_spectra
 from automatically_annotate_mass2motifs.utils import (store_pickled_file,
                                                       return_non_existing_file_name,
-                                                      convert_file_to_matchms_spectrum_objects)
+                                                      convert_file_to_matchms_spectrum_objects, load_pickled_file)
 
 
 class FilterLibrarySpectra:
@@ -18,7 +18,7 @@ class FilterLibrarySpectra:
     def __init__(self,
                  spectra_file_name,
                  ion_mode: str = "positive",
-                 already_cleaned = False):
+                 already_cleaned: bool = False):
         assert ion_mode in ("negative", "positive"), "ion_mode should be 'postive' or 'negative'"
         self.ion_mode = ion_mode
         self.spectra_file_name = spectra_file_name
@@ -32,7 +32,6 @@ class FilterLibrarySpectra:
             self.select_spectra_in_ion_mode()
             self.apply_metadata_filters()
             self.remove_spectra_missing_smiles_or_inchi()
-
 
     def apply_metadata_filters(self):
         cleaned_spectra = []
@@ -57,7 +56,6 @@ class FilterLibrarySpectra:
             cleaned_spectra.append(spectrum)
         self.spectra = cleaned_spectra
         self.processing_log += "_cleaned"
-
 
     def remove_spectra_missing_smiles_or_inchi(self):
         fully_annotated_spectra = []
@@ -104,8 +102,31 @@ class FilterLibrarySpectra:
         return out_file_name
 
 
-if __name__ == "__main__":
-    library_spectra = FilterLibrarySpectra("../data/all_gnps_cleaned_and_filtered.pickle", already_cleaned=True)
-    library_spectra.save_pickled_spectra()
-    library_spectra.bin_spectra(0.005)
-    library_spectra.save_pickled_spectra()
+def get_cleaned_and_binned_spectra(raw_library_spectra_file,
+                                   bin_size,
+                                   ion_mode="positive"):
+    """Returns cleaned and binned spectra, results are automatically stored in file and loaded if already available"""
+    filtered_library_file = os.path.splitext(raw_library_spectra_file)[0] + "_positive_ionmode_cleaned_filtered.pickle"
+    filtered_and_binned_library_file = os.path.splitext(raw_library_spectra_file)[
+                                           0] + f"_{ion_mode}_ionmode_cleaned_filtered_binned_{bin_size}.pickle"
+    # Check if there are already files containing cleaned or filtered spectra
+    if os.path.isfile(filtered_and_binned_library_file):
+        print(f'Loading the file {filtered_and_binned_library_file}')
+        binned_and_filtered_library_spectra = load_pickled_file(filtered_and_binned_library_file)
+        assert isinstance(binned_and_filtered_library_spectra, list)
+        assert isinstance(binned_and_filtered_library_spectra[0], Spectrum)
+    elif os.path.isfile(filtered_library_file):
+        print(f'Loading the file {filtered_library_file} ')
+        library_spectra = FilterLibrarySpectra(filtered_library_file, already_cleaned=True)
+        library_spectra.bin_spectra(bin_size)
+        library_spectra.save_pickled_spectra()
+        binned_and_filtered_library_spectra = library_spectra.spectra
+    else:
+        # Load and filter library spectra
+        library_spectra = FilterLibrarySpectra(raw_library_spectra_file, already_cleaned=False, ion_mode=ion_mode)
+        # Optional store the pickled spectra (for quicker processing)
+        library_spectra.save_pickled_spectra()
+        library_spectra.bin_spectra(bin_size)
+        library_spectra.save_pickled_spectra()
+        binned_and_filtered_library_spectra = library_spectra.spectra
+    return binned_and_filtered_library_spectra
