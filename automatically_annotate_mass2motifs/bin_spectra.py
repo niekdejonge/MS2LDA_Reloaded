@@ -7,7 +7,7 @@ from matchms.filtering import add_losses
 
 def bin_spectra(spectra: List[Spectrum],
                 bin_width) -> List[Spectrum]:
-    """Bins all spectra"""
+    """Bins the fragment masses of all spectra"""
     binned_spectra = []
     for spectrum in tqdm(spectra,
                          desc="Binning spectra"):
@@ -16,7 +16,7 @@ def bin_spectra(spectra: List[Spectrum],
 
 def bin_spectrum(spectrum: Spectrum,
                  bin_width) -> Spectrum:
-    """Bins one spectrum"""
+    """Bins the spectrum fragments of one spectrum"""
     if spectrum.losses is None:
         spectrum = add_losses(spectrum)
 

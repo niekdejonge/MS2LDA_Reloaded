@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pytest
 from automatically_annotate_mass2motifs.mass2motif import Mass2Motif, load_mass2motifs_json
 from automatically_annotate_mass2motifs.utils import store_as_json
 from automatically_annotate_mass2motifs.download_mass2motifs import convert_words_to_peaks
@@ -8,14 +9,20 @@ from automatically_annotate_mass2motifs.moss_annotation import load_moss_results
 from tests.test_automatically_annotate_mass2motifs.generate_test_data import (generate_moss_results_file,
                                                                               generate_annotation)
 
-
-def test_convert_words_to_peaks():
+@pytest.fixture
+def words():
     words = ['fragment_375.2225',
              'loss_80.0275',
              'loss_128.0625']
+    return words
+@pytest.fixture
+def probabilities():
     probabilities = [0.0055,
                      0.0012,
                      0.0019]
+    return probabilities
+
+def test_convert_words_to_peaks(words, probabilities):
     fragments, fragment_probabilities, losses, loss_probabilities = convert_words_to_peaks(words, probabilities)
     assert fragments == [375.2225]
     assert np.all(losses == [80.0275, 128.0625])
@@ -23,18 +30,15 @@ def test_convert_words_to_peaks():
     assert np.all(loss_probabilities == [0.0012, 0.0019])
 
 
-def test_convert_words_to_peaks_unordered():
+def test_convert_words_to_peaks_unordered(probabilities):
     words = ['fragment_375.2225',
              'loss_128.0625',
              'loss_80.0275']
-    probabilities = [0.0055,
-                     0.0019,
-                     0.0012,]
     fragments, fragment_probabilities, losses, loss_probabilities = convert_words_to_peaks(words, probabilities)
     assert fragments == [375.2225]
     assert np.all(losses == [80.0275, 128.0625])
     assert fragment_probabilities == [0.0055]
-    assert np.all(loss_probabilities == [0.0012, 0.0019])
+    assert np.all(loss_probabilities == [0.0019, 0.0012])
 
 
 def test_creating_mass2motif_with_correct_mass_bin():
