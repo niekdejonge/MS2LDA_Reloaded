@@ -59,7 +59,7 @@ def test_add_moss_annotations():
                             bin_size=0.05)
     scores_matrix = create_similarity_matrix([mass2motif], spectra)
     spectrum_selector = ScoresMatrix(spectra, scores_matrix)
-    annotation = get_moss_annotation(mass2motif, spectrum_selector, 0.05, 10, 80)
+    annotation = get_moss_annotation(mass2motif, spectrum_selector, 0.05, 10, 80, 0)
     assert isinstance(annotation, Annotation)
     expected_result = pd.DataFrame([[2, 0 ,100.0, 0.0, 100.0],
                                     [1, 0, 50.0, 0.0, 50.0],
