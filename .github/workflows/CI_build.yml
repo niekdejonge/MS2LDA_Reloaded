@@ -36,11 +36,6 @@ jobs:
         run: pytest --cov --cov-report term --cov-report xml
       - name: Check style against standards using prospector
         run: prospector -o grouped -o pylint:pylint-report.txt
-      - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   basic_checks:
     name: Basic code checks / python-${{ matrix.python-version }} / ${{ matrix.os }}
