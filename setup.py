@@ -35,7 +35,8 @@ setup(
         "pandas>=1.2.5",
         "rdkit",
         "tqdm",
-        "matplotlib"
+        "matplotlib",
+        "requests"
     ],
     extras_require={"dev": ["pytest",
                             "pytest-cov",

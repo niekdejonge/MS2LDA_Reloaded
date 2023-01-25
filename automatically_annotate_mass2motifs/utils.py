@@ -87,7 +87,7 @@ def store_as_json(objects_to_store,
     if not isinstance(objects_to_store, list):
         objects_to_store = [objects_to_store]
     json_str = []
-    for object in objects_to_store:
-        json_str.append(object.to_dict())
+    for object_to_store in objects_to_store:
+        json_str.append(object_to_store.to_dict())
     with open(file_name, "w", encoding="utf-8") as file:
         json.dump(json_str, file, indent=3)

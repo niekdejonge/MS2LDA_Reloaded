@@ -21,6 +21,7 @@ class Mass2Motif:
                  motif_set_name: Optional[str] = None,
                  manual_annotation: Optional[str] = None,
                  moss_annotations: Optional[List[Annotation]] = None):
+        # pylint: disable=too-many-arguments
         assert all(fragments[i] <= fragments[i+1] for i in range(len(fragments) - 1)), "Expected sorted fragments"
         assert all(losses[i] <= losses[i+1] for i in range(len(losses) - 1)), "Expected sorted losses"
 
@@ -124,7 +125,7 @@ class Mass2Motif:
 
 
 def load_mass2motifs_json(file_name) -> List[Mass2Motif]:
-    with open(file_name, 'r') as file:
+    with open(file_name, 'r', encoding="utf-8") as file:
         mass2motifs = []
         for spectrum_dict in json.load(file):
             mass2motif = Mass2Motif(

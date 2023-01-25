@@ -10,6 +10,7 @@ from automatically_annotate_mass2motifs.clean_library_spectra import get_cleaned
 from automatically_annotate_mass2motifs.scores_matrix import create_similarity_matrix
 from automatically_annotate_mass2motifs.visualize import save_mass2motif_results_in_pdf
 
+
 def main(raw_library_spectra_file: str,
          motif_set_name: str,
          bin_size: float,
@@ -17,6 +18,7 @@ def main(raw_library_spectra_file: str,
          directory_to_store_in_between_steps: str,
          similarity_thresholds: Tuple[float, ...],
          load_previous_annotation=False):
+    # pylint: disable=too-many-arguments
     """Pipeline for adding annotations to mass2motifs and storing in between files"""
     mass2motifs_file_name = os.path.join(directory_to_store_in_between_steps,
                                          f"mass2motifs_{motif_set_name}.json")

@@ -39,7 +39,8 @@ def run_moss(smiles_file_name,
     subprocess.run(["java", "-cp",
                     moss_executable,
                     "moss.Miner",
-                    f"-s{minimal_support}", f"-S{maximal_support_complement}", smiles_file_name, output_file_name])
+                    f"-s{minimal_support}", f"-S{maximal_support_complement}", smiles_file_name, output_file_name],
+                   check=True)
 
 
 def run_moss_wrapper(smiles_matching_mass2motif: List[str],
@@ -48,18 +49,15 @@ def run_moss_wrapper(smiles_matching_mass2motif: List[str],
                      maximal_relative_support_complement: int):
     """Runs Moss, by creating a temp dir the in between files are removed after running"""
     # Creates a temporary directory for all the intermediate files
-    temp_dir = tempfile.TemporaryDirectory()
-    # Creates output file names
-    moss_input_file_name = os.path.join(temp_dir.name, "moss.smiles")
-    moss_output_file_name = os.path.join(temp_dir.name, "moss.sub")
-    create_moss_input_file(smiles_matching_mass2motif, smiles_not_matching_mass2motif, moss_input_file_name)
+    with tempfile.TemporaryDirectory() as temp_dir_name:
+        # Creates output file names
+        moss_input_file_name = os.path.join(temp_dir_name, "moss.smiles")
+        moss_output_file_name = os.path.join(temp_dir_name, "moss.sub")
+        create_moss_input_file(smiles_matching_mass2motif, smiles_not_matching_mass2motif, moss_input_file_name)
 
-    run_moss(moss_input_file_name, moss_output_file_name, minimal_relative_support, maximal_relative_support_complement)
+        run_moss(moss_input_file_name, moss_output_file_name, minimal_relative_support, maximal_relative_support_complement)
 
-    moss_results = load_moss_results(moss_output_file_name)
-    # Deletes the temporary directory
-    if temp_dir is not None:
-        temp_dir.cleanup()
+        moss_results = load_moss_results(moss_output_file_name)
     return moss_results
 
 
@@ -70,6 +68,7 @@ def get_moss_annotation(mass2motif: Mass2Motif,
                         maximal_relative_support_complement: int,
                         minimal_number_of_matching_spectra=10) -> Optional[Annotation]:
     """A wrapper to add a moss annotation to a Mass2Motif"""
+    # pylint: disable=too-many-arguments
     # Selects the spectra that match with the mass2motif
     matching_spectra, not_matching_spectra = scores_matrix.select_matching_spectra(similarity_threshold,
                                                                                    mass2motif)
@@ -106,6 +105,7 @@ def get_multiple_moss_annotations(mass2motifs: List[Mass2Motif],
                                   minimal_relative_support: int,
                                   maximal_relative_support_complement: int,
                                   save_in_between_file=None):
+    # pylint: disable=too-many-arguments
     if save_in_between_file is not None:
         save_in_between_file = return_non_existing_file_name(save_in_between_file)
 
@@ -156,7 +156,7 @@ def create_inchikeys_smiles_dict(spectra):
 
 def load_moss_results(file_name: str) -> Optional[pd.DataFrame]:
     """Loads in a moss results file and returns a pd.DataFrame"""
-    with open(file_name, "r") as file:
+    with open(file_name, "r", encoding="utf-8") as file:
         lines = file.readlines()
         if len(lines) == 0:
             # Moss returns an empty dataframe, when no annotations are found.
@@ -164,7 +164,7 @@ def load_moss_results(file_name: str) -> Optional[pd.DataFrame]:
         assert lines[0] == "id,description,nodes,edges,s_abs,s_rel,c_abs,c_rel\n", \
             "Expected the header id,description,nodes,edges,s_abs,s_rel,c_abs,c_rel in a moss output file"
 
-    with open(file_name, "r") as file:
+    with open(file_name, "r", encoding="utf-8") as file:
         moss_results = pd.read_csv(file)
     assert isinstance(moss_results, pd.DataFrame)
     assert list(moss_results.columns) == ["id", "description", "nodes", "edges", "s_abs", "s_rel", "c_abs", "c_rel"], \

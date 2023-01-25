@@ -12,7 +12,7 @@ class Annotation:
                  nr_of_spectra_matching_mass2motif: int,
                  nr_of_spectra_not_matching_mass2motif: int,
                  minimal_number_of_matching_spectra: int = 0):
-
+        # pylint: disable=too-many-arguments
         # Settings
         self.minimal_similarity = minimal_similarity
         self.moss_minimal_relative_support = moss_minimal_relative_support
@@ -55,7 +55,7 @@ class Annotation:
     def to_dict(self):
         """Converts the object to a json storable format"""
         class_dict = self.__dict__.copy()
-        annotations = self.moss_annotations.__deepcopy__()
+        annotations = self.moss_annotations.copy(deep=True)
         class_dict["moss_annotations"] = annotations.to_dict()
         return class_dict
 

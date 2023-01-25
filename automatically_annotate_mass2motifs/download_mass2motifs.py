@@ -25,9 +25,9 @@ def download_motif_set_from_motifdb(motifset_name, bin_size) -> List[Mass2Motif]
     mass2motif_list = []
     for motif_name in tqdm(motif_set,
                            desc="Downloading Mass2motifs"):
-        words = list(motif_set[motif_name].keys())
-        probabilities = list(motif_set[motif_name].values())
-        fragments, fragment_probabilities, losses, loss_probabilities = convert_words_to_peaks(words, probabilities)
+        fragments, fragment_probabilities, losses, loss_probabilities = convert_words_to_peaks(
+            words=list(motif_set[motif_name].keys()),
+            probabilities=list(motif_set[motif_name].values()))
         mass2motif = Mass2Motif(fragments, fragment_probabilities, losses, loss_probabilities, bin_size=bin_size,
                                 motif_name=motif_name, motif_set_name=motifset_name,
                                 manual_annotation=motif_set_metadata[motif_name]["annotation"])
@@ -112,4 +112,3 @@ def get_largest_possible_bin_size(words):
 
 def get_all_motifsets():
     pass
-

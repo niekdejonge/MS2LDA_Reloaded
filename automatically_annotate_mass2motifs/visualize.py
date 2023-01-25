@@ -1,4 +1,3 @@
-import os
 import numpy as np
 from typing import List
 from tqdm import tqdm
@@ -11,7 +10,7 @@ from rdkit.Chem.Descriptors import MolWt
 from rdkit.Chem import Draw
 
 from automatically_annotate_mass2motifs.annotation import Annotation
-from automatically_annotate_mass2motifs.mass2motif import load_mass2motifs_json, Mass2Motif
+from automatically_annotate_mass2motifs.mass2motif import Mass2Motif
 from automatically_annotate_mass2motifs.utils import return_non_existing_file_name
 
 
