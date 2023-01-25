@@ -19,6 +19,7 @@ def analyze_model_results(corpus_dir):
     # pprint(top_topics)
     print(CoherenceModel(model=model, corpus=corpus, coherence='u_mass').get_coherence())
 
+
 if __name__ == "__main__":
     corpus_dir = "../data/speed_up_ms2lda/corpus"
     analyze_model_results(corpus_dir)
