@@ -1,5 +1,5 @@
 # User specific excluded folders
-data
+#data
 automatically_annotate_mass2motifs/experiment_files
 
 # Editors

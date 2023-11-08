@@ -84,6 +84,6 @@ def create_dict_and_corpus(spectrum_docs: List[SpectrumDocument],
 
 
 if __name__ == "__main__":
-    filtered_spectra = load_and_filter_spectra("../data/Brocadia-Excl1-POS-1.mzML")
+    filtered_spectra = load_and_filter_spectra("../data/dummy_spectra.mgf") # dummy spectra from MS2QUERY
     create_dict_and_corpus(filtered_spectra,
                            "../data/speed_up_ms2lda/test_corpus")
